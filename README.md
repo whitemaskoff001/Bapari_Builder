@@ -38,6 +38,18 @@ npx supabase link --project-ref <project-ref>
 npx supabase db push
 ```
 
+## Default demo accounts
+
+These demo credentials are included in the Supabase migration file `supabase/migrations/20260902020000_seed_default_auth_users.sql` for testing access before you create custom staff accounts.
+
+Admin:
+- Email: admin@baparibuilders.com
+- Password: Admin@12345
+
+Seller:
+- Email: seller@baparibuilders.com
+- Password: Seller@12345
+
 ## Notes
 
 The frontend is intentionally resilient when the backend is not configured yet, so the storefront still renders with sensible defaults while the live Supabase project is connected.
