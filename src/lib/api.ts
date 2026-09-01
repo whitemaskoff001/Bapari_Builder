@@ -1,8 +1,84 @@
-import { supabase } from './supabase';
+import { isSupabaseConfigured, supabase } from './supabase';
 import type {
   Category, OptionGroup, OrderRow, OrderItemRow, DealRow,
   PaymentRow, ProfileRow, SiteContent, NotificationRow,
 } from '@/types';
+
+const DEFAULT_CATEGORIES: Category[] = [
+  { id: 'brick', name: 'Brick', description: 'Reliable masonry essentials for durable walls and structures.', image_url: 'https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=900', display_order: 1 },
+  { id: 'cement', name: 'Cement', description: 'High-strength cement for foundations, finishing, and structural work.', image_url: 'https://images.pexels.com/photos/162500/pexels-photo-162500.jpeg?auto=compress&cs=tinysrgb&w=900', display_order: 2 },
+  { id: 'sand', name: 'Sand', description: 'Clean, consistent sand for mixing, plastering, and finishing.', image_url: 'https://images.pexels.com/photos/220182/pexels-photo-220182.jpeg?auto=compress&cs=tinysrgb&w=900', display_order: 3 },
+  { id: 'steel', name: 'Steel', description: 'Structural steel and reinforcement for strength and stability.', image_url: 'https://images.pexels.com/photos/162553/pexels-photo-162553.jpeg?auto=compress&cs=tinysrgb&w=900', display_order: 4 },
+  { id: 'tile', name: 'Tiles', description: 'Flooring and wall tile solutions for durable finishes.', image_url: 'https://images.pexels.com/photos/271743/pexels-photo-271743.jpeg?auto=compress&cs=tinysrgb&w=900', display_order: 5 },
+  { id: 'paint', name: 'Paint & Finish', description: 'Protective and decorative finishing products for every surface.', image_url: 'https://images.pexels.com/photos/3184436/pexels-photo-3184436.jpeg?auto=compress&cs=tinysrgb&w=900', display_order: 6 },
+];
+
+const DEFAULT_SITE_CONTENT: SiteContent = {
+  announcement: { value: 'Building trust, one project at a time', image_url: '' },
+  contact_phone: { value: '+880 1711 123 456', image_url: '' },
+  company_name: { value: 'BAPARI', image_url: '' },
+  company_subname: { value: 'BUILDERS', image_url: '' },
+  hero_eyebrow: { value: 'Materials that move your vision forward', image_url: '' },
+  hero_title: { value: 'Build it right.', image_url: '' },
+  hero_title_em: { value: 'Build it to last.', image_url: '' },
+  hero_subtitle: { value: 'Reliable construction materials, honest guidance, and a team that understands what your project demands.', image_url: '' },
+  hero_stat1_value: { value: '15+', image_url: '' },
+  hero_stat1_label: { value: 'Years of trust', image_url: '' },
+  hero_stat2_value: { value: '4.9', image_url: '' },
+  hero_stat2_label: { value: 'Customer rating', image_url: '' },
+  hero_stat3_value: { value: '24h', image_url: '' },
+  hero_stat3_label: { value: 'Quick response', image_url: '' },
+  intro_eyebrow: { value: 'The Bapari standard', image_url: '' },
+  intro_title: { value: 'Materials you can', image_url: '' },
+  intro_title_em: { value: 'build a future on.', image_url: '' },
+  intro_body: { value: 'From the first foundation to the final finish, your materials shape everything. We source with care, stand behind what we sell, and make it simple to get exactly what your project needs.', image_url: '' },
+  intro_cta: { value: 'Meet the team', image_url: '' },
+  featured_eyebrow: { value: 'What we supply', image_url: '' },
+  featured_title: { value: 'Start with the essentials.', image_url: '' },
+  featured_cta: { value: 'View all materials', image_url: '' },
+  process_eyebrow: { value: 'Simple by design', image_url: '' },
+  process_title_1: { value: 'From your idea', image_url: '' },
+  process_title_2: { value: 'to', image_url: '' },
+  process_title_em: { value: 'your doorstep.', image_url: '' },
+  process_step1_title: { value: 'Choose your materials', image_url: '' },
+  process_step1_desc: { value: 'Browse our curated range of construction essentials.', image_url: '' },
+  process_step2_title: { value: 'Tell us what you need', image_url: '' },
+  process_step2_desc: { value: 'Share quantity, delivery details, and your preferences.', image_url: '' },
+  process_step3_title: { value: 'We work out the details', image_url: '' },
+  process_step3_desc: { value: 'Our team calls to confirm availability and the best price.', image_url: '' },
+  detail_badge: { value: 'Available for delivery', image_url: '' },
+  detail_subtitle: { value: 'for your next build.', image_url: '' },
+  detail_add_button: { value: 'Add to materials list', image_url: '' },
+  detail_note_prefix: { value: 'Not sure what you need?', image_url: '' },
+  detail_note_phone: { value: 'Call +880 1711 123 456', image_url: '' },
+};
+
+const DEFAULT_OPTION_GROUPS: Record<string, OptionGroup[]> = {
+  brick: [
+    { id: 'brick-unit', category_id: 'brick', name: 'Unit', display_order: 1, options: [{ id: 'brick-unit-pc', group_id: 'brick-unit', label: 'Piece', display_order: 1 }, { id: 'brick-unit-pallet', group_id: 'brick-unit', label: 'Pallet', display_order: 2 }] },
+    { id: 'brick-quality', category_id: 'brick', name: 'Quality', display_order: 2, options: [{ id: 'brick-quality-standard', group_id: 'brick-quality', label: 'Standard', display_order: 1 }, { id: 'brick-quality-premium', group_id: 'brick-quality', label: 'Premium', display_order: 2 }] },
+  ],
+  cement: [
+    { id: 'cement-unit', category_id: 'cement', name: 'Unit', display_order: 1, options: [{ id: 'cement-unit-bag', group_id: 'cement-unit', label: 'Bag', display_order: 1 }, { id: 'cement-unit-ton', group_id: 'cement-unit', label: 'Ton', display_order: 2 }] },
+    { id: 'cement-strength', category_id: 'cement', name: 'Strength', display_order: 2, options: [{ id: 'cement-strength-42', group_id: 'cement-strength', label: '42.5', display_order: 1 }, { id: 'cement-strength-52', group_id: 'cement-strength', label: '52.5', display_order: 2 }] },
+  ],
+  sand: [
+    { id: 'sand-unit', category_id: 'sand', name: 'Unit', display_order: 1, options: [{ id: 'sand-unit-truck', group_id: 'sand-unit', label: 'Truck', display_order: 1 }, { id: 'sand-unit-cft', group_id: 'sand-unit', label: 'CFT', display_order: 2 }] },
+    { id: 'sand-type', category_id: 'sand', name: 'Type', display_order: 2, options: [{ id: 'sand-type-river', group_id: 'sand-type', label: 'River', display_order: 1 }, { id: 'sand-type-fine', group_id: 'sand-type', label: 'Fine', display_order: 2 }] },
+  ],
+  steel: [
+    { id: 'steel-unit', category_id: 'steel', name: 'Unit', display_order: 1, options: [{ id: 'steel-unit-ton', group_id: 'steel-unit', label: 'Ton', display_order: 1 }, { id: 'steel-unit-bar', group_id: 'steel-unit', label: 'Bar', display_order: 2 }] },
+    { id: 'steel-grade', category_id: 'steel', name: 'Grade', display_order: 2, options: [{ id: 'steel-grade-40', group_id: 'steel-grade', label: 'Grade 40', display_order: 1 }, { id: 'steel-grade-60', group_id: 'steel-grade', label: 'Grade 60', display_order: 2 }] },
+  ],
+  tile: [
+    { id: 'tile-unit', category_id: 'tile', name: 'Unit', display_order: 1, options: [{ id: 'tile-unit-box', group_id: 'tile-unit', label: 'Box', display_order: 1 }, { id: 'tile-unit-sqft', group_id: 'tile-unit', label: 'Sqft', display_order: 2 }] },
+    { id: 'tile-finish', category_id: 'tile', name: 'Finish', display_order: 2, options: [{ id: 'tile-finish-matt', group_id: 'tile-finish', label: 'Matte', display_order: 1 }, { id: 'tile-finish-gloss', group_id: 'tile-finish', label: 'Gloss', display_order: 2 }] },
+  ],
+  paint: [
+    { id: 'paint-unit', category_id: 'paint', name: 'Unit', display_order: 1, options: [{ id: 'paint-unit-litre', group_id: 'paint-unit', label: 'Litre', display_order: 1 }, { id: 'paint-unit-tin', group_id: 'paint-unit', label: 'Tin', display_order: 2 }] },
+    { id: 'paint-finish', category_id: 'paint', name: 'Finish', display_order: 2, options: [{ id: 'paint-finish-matte', group_id: 'paint-finish', label: 'Matte', display_order: 1 }, { id: 'paint-finish-gloss', group_id: 'paint-finish', label: 'Gloss', display_order: 2 }] },
+  ],
+};
 
 // ─── Image Upload ──────────────────────────────────────────────
 
@@ -20,22 +96,26 @@ export async function uploadSiteImage(file: Blob, folder: string): Promise<strin
 // ─── Categories ───────────────────────────────────────────────
 
 export async function fetchCategories(): Promise<Category[]> {
+  if (!isSupabaseConfigured) return DEFAULT_CATEGORIES;
+
   const { data, error } = await supabase
     .from('categories')
     .select('*')
     .order('display_order');
   if (error) throw error;
-  return data ?? [];
+  return data?.length ? data : DEFAULT_CATEGORIES;
 }
 
 export async function fetchCategoryOptionGroups(categoryId: string): Promise<OptionGroup[]> {
+  if (!isSupabaseConfigured) return DEFAULT_OPTION_GROUPS[categoryId] ?? [];
+
   const { data: groups, error: gErr } = await supabase
     .from('category_option_groups')
     .select('*')
     .eq('category_id', categoryId)
     .order('display_order');
   if (gErr) throw gErr;
-  if (!groups?.length) return [];
+  if (!groups?.length) return DEFAULT_OPTION_GROUPS[categoryId] ?? [];
 
   const groupIds = groups.map((g) => g.id);
   const { data: options, error: oErr } = await supabase
@@ -232,6 +312,7 @@ export async function fetchProfiles(): Promise<ProfileRow[]> {
 }
 
 export async function fetchMyProfile(): Promise<ProfileRow | null> {
+  if (!isSupabaseConfigured) return null;
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
   const { data, error } = await supabase
@@ -308,9 +389,11 @@ export async function markNotificationRead(id: string) {
 // ─── Site Content ─────────────────────────────────────────────
 
 export async function fetchSiteContent(): Promise<SiteContent> {
+  if (!isSupabaseConfigured) return { ...DEFAULT_SITE_CONTENT };
+
   const { data, error } = await supabase.from('site_content').select('*');
   if (error) throw error;
-  const result: SiteContent = {};
+  const result: SiteContent = { ...DEFAULT_SITE_CONTENT };
   for (const row of data ?? []) {
     result[row.key] = { value: row.value ?? '', image_url: row.image_url ?? '' };
   }

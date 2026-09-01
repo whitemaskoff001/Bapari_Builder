@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
 import type { Session } from '@supabase/supabase-js';
-import { supabase } from './supabase';
+import { isSupabaseConfigured, supabase } from './supabase';
 import type { ProfileRow, Role } from '@/types';
 import { fetchMyProfile } from './api';
 
@@ -25,6 +25,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+
+    if (!isSupabaseConfigured) {
+      setLoading(false);
+      return;
+    }
 
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
@@ -53,11 +58,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshProfile = async () => {
+    if (!isSupabaseConfigured) return;
     const p = await fetchMyProfile();
     setProfile(p);
   };
 
   const signIn = async (email: string, password: string) => {
+    if (!isSupabaseConfigured) throw new Error('Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) throw error;
     const { data: prof } = await supabase
@@ -71,6 +78,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    if (!isSupabaseConfigured) {
+      setSession(null);
+      setProfile(null);
+      return;
+    }
     await supabase.auth.signOut();
     setSession(null);
     setProfile(null);
