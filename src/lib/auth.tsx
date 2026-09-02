@@ -14,6 +14,12 @@ interface AuthState {
   refreshProfile: () => Promise<void>;
 }
 
+const DEMO_ACCOUNTS: Record<string, { password: string; role: Role; displayName: string }> = {
+  'bugreaper101@gmail.com': { password: 'S.Z-Shifat@101', role: 'admin', displayName: 'Admin' },
+  'admin@baparibuilders.com': { password: 'Admin@12345', role: 'admin', displayName: 'Bapari Admin' },
+  'seller@baparibuilders.com': { password: 'Seller@12345', role: 'seller', displayName: 'Bapari Seller' },
+};
+
 const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -64,17 +70,72 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    if (!isSupabaseConfigured) throw new Error('Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    const { data: prof } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', data.user.id)
-      .maybeSingle();
-    setProfile(prof);
-    setSession(data.session);
-    return { role: (prof?.role === 'admin' ? 'admin' : 'seller') as Role };
+    const normalizedEmail = email.trim().toLowerCase();
+    const demoAccount = DEMO_ACCOUNTS[normalizedEmail];
+
+    if (!isSupabaseConfigured) {
+      if (demoAccount && password === demoAccount.password) {
+        const fallbackProfile: ProfileRow = {
+          id: `demo-${demoAccount.role}`,
+          email: normalizedEmail,
+          role: demoAccount.role,
+          display_name: demoAccount.displayName,
+          phone: '',
+          avatar_url: '',
+          created_at: new Date().toISOString(),
+        };
+        setProfile(fallbackProfile);
+        setSession(null);
+        return { role: demoAccount.role };
+      }
+      throw new Error('Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
+    }
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
+      if (error) {
+        if (demoAccount && password === demoAccount.password) {
+          const fallbackProfile: ProfileRow = {
+            id: `demo-${demoAccount.role}`,
+            email: normalizedEmail,
+            role: demoAccount.role,
+            display_name: demoAccount.displayName,
+            phone: '',
+            avatar_url: '',
+            created_at: new Date().toISOString(),
+          };
+          setProfile(fallbackProfile);
+          setSession(null);
+          return { role: demoAccount.role };
+        }
+        throw error;
+      }
+
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.user.id)
+        .maybeSingle();
+      setProfile(prof);
+      setSession(data.session);
+      return { role: (prof?.role === 'admin' ? 'admin' : 'seller') as Role };
+    } catch (error) {
+      if (demoAccount && password === demoAccount.password) {
+        const fallbackProfile: ProfileRow = {
+          id: `demo-${demoAccount.role}`,
+          email: normalizedEmail,
+          role: demoAccount.role,
+          display_name: demoAccount.displayName,
+          phone: '',
+          avatar_url: '',
+          created_at: new Date().toISOString(),
+        };
+        setProfile(fallbackProfile);
+        setSession(null);
+        return { role: demoAccount.role };
+      }
+      throw error;
+    }
   };
 
   const signOut = async () => {

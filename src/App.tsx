@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+﻿import { useCallback, useEffect, useState } from 'react';
 import {
   ArrowRight, Building2, Check, ChevronDown, CircleUserRound, ClipboardList, Copy,
   HardHat, Menu, Minus, Package, Phone, Plus,
@@ -143,7 +143,7 @@ function App() {
 }
 export default App;
 
-// ─── Header ───────────────────────────────────────────────────
+// â”€â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function Header({ cartCount, role, onNavigate, onCart, onLogin, mobileMenu, setMobileMenu, announcement, content, editMode, onContentUpdate }: {
   cartCount: number; role: string | null; onNavigate: (v: View) => void; onCart: () => void; onLogin: () => void;
@@ -185,7 +185,7 @@ function Header({ cartCount, role, onNavigate, onCart, onLogin, mobileMenu, setM
   );
 }
 
-// ─── Home ─────────────────────────────────────────────────────
+// â”€â”€â”€ Home â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function Home({ onBrowse, onAbout, onProduct, content, editMode, onContentUpdate }: {
   onBrowse: () => void; onAbout: () => void; onProduct: (id: string) => void;
@@ -271,7 +271,7 @@ function Home({ onBrowse, onAbout, onProduct, content, editMode, onContentUpdate
   );
 }
 
-// ─── EditableText (admin edit mode) ───────────────────────────
+// â”€â”€â”€ EditableText (admin edit mode) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function EditableText({ value, contentKey, editMode, onUpdate, multiline }: {
   value: string; contentKey: string; editMode: boolean; onUpdate: () => void; multiline?: boolean;
@@ -304,7 +304,7 @@ function EditableText({ value, contentKey, editMode, onUpdate, multiline }: {
   );
 }
 
-// ─── ProductCard ──────────────────────────────────────────────
+// â”€â”€â”€ ProductCard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ProductCard({ category, onClick }: { category: Category; onClick: () => void }) {
   return (
@@ -320,7 +320,7 @@ function ProductCard({ category, onClick }: { category: Category; onClick: () =>
   );
 }
 
-// ─── Products ─────────────────────────────────────────────────
+// â”€â”€â”€ Products â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function Products({ onProduct, editMode, onContentUpdate, content }: {
   onProduct: (id: string) => void; editMode: boolean; onContentUpdate: () => void; content: SiteContent;
@@ -424,7 +424,7 @@ function Products({ onProduct, editMode, onContentUpdate, content }: {
   );
 }
 
-// ─── ProductDetail ────────────────────────────────────────────
+// â”€â”€â”€ ProductDetail â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ProductDetail({ categoryId, onBack, onAdd, editMode, content, onContentUpdate }: {
   categoryId: string; onBack: () => void; onAdd: (item: CartItem) => void; editMode: boolean;
@@ -592,7 +592,7 @@ function ProductDetail({ categoryId, onBack, onAdd, editMode, content, onContent
 
   return (
     <section className="detail-section">
-      <button className="back-link" onClick={onBack}>← All materials</button>
+      <button className="back-link" onClick={onBack}>â† All materials</button>
       <div className="detail-grid">
         <div className="detail-image">
           <img src={category.image_url || photos.fallback} alt={category.name} />
@@ -635,7 +635,7 @@ function ProductDetail({ categoryId, onBack, onAdd, editMode, content, onContent
   );
 }
 
-// ─── CartDrawer ───────────────────────────────────────────────
+// â”€â”€â”€ CartDrawer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function CartDrawer({ open, cart, onClose, onRemove, onCheckout }: {
   open: boolean; cart: CartItem[]; onClose: () => void; onRemove: (i: number) => void; onCheckout: () => void;
@@ -658,7 +658,7 @@ function CartDrawer({ open, cart, onClose, onRemove, onCheckout }: {
                   <img src={item.image_url || photos.fallback} alt="" />
                   <div>
                     <strong>{item.category_name}</strong>
-                    <span>{item.quantity} {item.unit} · {Object.values(item.option_selections).filter((v) => v !== item.unit).join(', ')}</span>
+                    <span>{item.quantity} {item.unit} Â· {Object.values(item.option_selections).filter((v) => v !== item.unit).join(', ')}</span>
                   </div>
                   <button onClick={() => onRemove(i)}><X size={15} /></button>
                 </div>
@@ -675,7 +675,7 @@ function CartDrawer({ open, cart, onClose, onRemove, onCheckout }: {
   );
 }
 
-// ─── CartPage ─────────────────────────────────────────────────
+// â”€â”€â”€ CartPage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function CartPage({ cart, onRemove, onBrowse, onSubmitted }: {
   cart: CartItem[]; onRemove: (i: number) => void; onBrowse: () => void; onSubmitted: (token: string, reference: string) => void;
@@ -702,9 +702,9 @@ function CartPage({ cart, onRemove, onBrowse, onSubmitted }: {
       localStorage.removeItem('bapari-cart');
 
       // Send confirmation email with reference number and order details
-      const itemListText = items.map((i) => `• ${i.quantity} ${i.unit} ${i.category_name}`).join('\n');
-      const emailBody = `Hi ${form.name},\n\nThank you for your order with Bapari Builders. We've received your request and our team will call you at ${form.phone} to confirm availability and pricing.\n\nYour order reference: ${result.reference_number}\n\nMaterials requested:\n${itemListText}\n\nDelivery address: ${form.address}\n\nYou can track your order anytime by entering this reference on our Track Order page.\n\nBapari Builders — Building trust, one project at a time.`;
-      api.sendNotificationEmail(form.email, `Order Confirmation — ${result.reference_number}`, emailBody).catch(() => {});
+      const itemListText = items.map((i) => `â€¢ ${i.quantity} ${i.unit} ${i.category_name}`).join('\n');
+      const emailBody = `Hi ${form.name},\n\nThank you for your order with Bapari Builders. We've received your request and our team will call you at ${form.phone} to confirm availability and pricing.\n\nYour order reference: ${result.reference_number}\n\nMaterials requested:\n${itemListText}\n\nDelivery address: ${form.address}\n\nYou can track your order anytime by entering this reference on our Track Order page.\n\nBapari Builders â€” Building trust, one project at a time.`;
+      api.sendNotificationEmail(form.email, `Order Confirmation â€” ${result.reference_number}`, emailBody).catch(() => {});
 
       onSubmitted(result.access_token, result.reference_number);
     } catch (err) {
@@ -725,7 +725,7 @@ function CartPage({ cart, onRemove, onBrowse, onSubmitted }: {
           {cart.length ? cart.map((item, i) => (
             <div className="summary-item" key={item.id}>
               <img src={item.image_url || photos.fallback} alt="" />
-              <div><strong>{item.category_name}</strong><span>{item.quantity} {item.unit} · {Object.values(item.option_selections).filter((v) => v !== item.unit).join(', ')}</span></div>
+              <div><strong>{item.category_name}</strong><span>{item.quantity} {item.unit} Â· {Object.values(item.option_selections).filter((v) => v !== item.unit).join(', ')}</span></div>
               <button onClick={() => onRemove(i)}><X size={15} /></button>
             </div>
           )) : <div className="empty-summary">No materials added yet. <button className="text-button" onClick={onBrowse}>Browse the catalog</button></div>}
@@ -749,7 +749,7 @@ function CartPage({ cart, onRemove, onBrowse, onSubmitted }: {
   );
 }
 
-// ─── OrderConfirmation ────────────────────────────────────────
+// â”€â”€â”€ OrderConfirmation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function OrderConfirmation({ token, reference, onHome }: { token: string; reference: string; onHome: () => void }) {
   const [order, setOrder] = useState<any>(null);
@@ -804,7 +804,7 @@ function OrderConfirmation({ token, reference, onHome }: { token: string; refere
               {(order.items ?? []).map((item: any, i: number) => (
                 <div className="order-item-row" key={i}>
                   <Package size={16} />
-                  <span>{item.quantity} {item.unit} · {item.category_name}</span>
+                  <span>{item.quantity} {item.unit} Â· {item.category_name}</span>
                 </div>
               ))}
             </div>
@@ -824,7 +824,7 @@ function OrderConfirmation({ token, reference, onHome }: { token: string; refere
   );
 }
 
-// ─── StatusPage ───────────────────────────────────────────────
+// â”€â”€â”€ StatusPage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function StatusPage() {
   const [token, setToken] = useState('');
@@ -835,7 +835,7 @@ function StatusPage() {
   const statusLabels: Record<string, string> = {
     pending: 'Waiting for confirmation',
     picked_up: 'Picked up by our team',
-    accepted: 'Accepted — negotiating terms',
+    accepted: 'Accepted â€” negotiating terms',
     rejected: 'Order rejected',
     deal_created: 'Deal in progress',
     completed: 'Order completed',
@@ -873,8 +873,8 @@ function StatusPage() {
             <div className="status-result-head"><span className="status-dot" /><strong>Order found</strong><span>{order.reference_number}</span></div>
             <div className="order-detail-grid">
               <div className="order-detail-cell"><span className="card-eyebrow">Status</span><strong className="status-label-big">{statusLabels[order.status] || order.status}</strong></div>
-              <div className="order-detail-cell"><span className="card-eyebrow">Placed on</span><span>{order.created_at ? new Date(order.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}</span></div>
-              <div className="order-detail-cell"><span className="card-eyebrow">Contact</span><span>{order.buyer_name} · {order.buyer_phone}</span></div>
+              <div className="order-detail-cell"><span className="card-eyebrow">Placed on</span><span>{order.created_at ? new Date(order.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'â€”'}</span></div>
+              <div className="order-detail-cell"><span className="card-eyebrow">Contact</span><span>{order.buyer_name} Â· {order.buyer_phone}</span></div>
               <div className="order-detail-cell"><span className="card-eyebrow">Delivery address</span><span>{order.delivery_address}</span></div>
             </div>
             <div className="order-status-timeline">
@@ -894,7 +894,7 @@ function StatusPage() {
             <div className="order-items-list">
               <span className="card-eyebrow">Materials requested</span>
               {(order.items ?? []).map((item: any, i: number) => (
-                <div className="order-item-row" key={i}><Package size={16} /><span>{item.quantity} {item.unit} · {item.category_name}</span></div>
+                <div className="order-item-row" key={i}><Package size={16} /><span>{item.quantity} {item.unit} Â· {item.category_name}</span></div>
               ))}
             </div>
             {order.deals?.length > 0 && (
@@ -910,7 +910,7 @@ function StatusPage() {
   );
 }
 
-// ─── DealView (buyer sees terms, can accept/reject) ───────────
+// â”€â”€â”€ DealView (buyer sees terms, can accept/reject) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function DealView({ dealToken, modToken }: { dealToken: string; modToken: string }) {
   const [deal, setDeal] = useState<any>(null);
@@ -974,16 +974,16 @@ function DealView({ dealToken, modToken }: { dealToken: string; modToken: string
         ) : (
           <>
             <div className="deal-terms-box">
-              <div className="deal-term-row"><span>Total price</span><strong>৳{fmt(isModification ? mod.new_total_price : deal.total_price)}</strong></div>
-              <div className="deal-term-row"><span>Down payment</span><strong>৳{fmt(deal.down_payment)}</strong></div>
-              <div className="deal-term-row highlight"><span>Remaining after down payment</span><strong>৳{fmt(isModification ? mod.new_total_price - deal.total_paid : deal.remaining_balance)}</strong></div>
-              {deal.total_paid > 0 && <div className="deal-term-row"><span>Paid so far</span><strong>৳{fmt(deal.total_paid)}</strong></div>}
+              <div className="deal-term-row"><span>Total price</span><strong>à§³{fmt(isModification ? mod.new_total_price : deal.total_price)}</strong></div>
+              <div className="deal-term-row"><span>Down payment</span><strong>à§³{fmt(deal.down_payment)}</strong></div>
+              <div className="deal-term-row highlight"><span>Remaining after down payment</span><strong>à§³{fmt(isModification ? mod.new_total_price - deal.total_paid : deal.remaining_balance)}</strong></div>
+              {deal.total_paid > 0 && <div className="deal-term-row"><span>Paid so far</span><strong>à§³{fmt(deal.total_paid)}</strong></div>}
             </div>
 
             <div className="order-items-list">
               <span className="card-eyebrow">Materials</span>
               {(isModification ? mod.new_items : deal.items ?? []).map((item: any, i: number) => (
-                <div className="order-item-row" key={i}><Package size={16} /><span>{item.quantity} {item.unit} · {item.category_name}</span></div>
+                <div className="order-item-row" key={i}><Package size={16} /><span>{item.quantity} {item.unit} Â· {item.category_name}</span></div>
               ))}
             </div>
 
@@ -991,7 +991,7 @@ function DealView({ dealToken, modToken }: { dealToken: string; modToken: string
               <div className="order-items-list">
                 <span className="card-eyebrow">Payment history</span>
                 {deal.payments.map((p: any) => (
-                  <div className="order-item-row" key={p.id}><TrendingUp size={16} /><span>৳{fmt(p.amount)} — {new Date(p.created_at).toLocaleDateString()}</span></div>
+                  <div className="order-item-row" key={p.id}><TrendingUp size={16} /><span>à§³{fmt(p.amount)} â€” {new Date(p.created_at).toLocaleDateString()}</span></div>
                 ))}
               </div>
             )}
@@ -1018,7 +1018,7 @@ function DealView({ dealToken, modToken }: { dealToken: string; modToken: string
   );
 }
 
-// ─── SellerConfirm ────────────────────────────────────────────
+// â”€â”€â”€ SellerConfirm â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function SellerConfirm({ sellerToken }: { sellerToken: string }) {
   const [loading, setLoading] = useState(true);
@@ -1062,7 +1062,7 @@ function SellerConfirm({ sellerToken }: { sellerToken: string }) {
   );
 }
 
-// ─── About ────────────────────────────────────────────────────
+// â”€â”€â”€ About â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function About({ onContact, content, editMode, onContentUpdate }: {
   onContact: () => void; content: SiteContent; editMode: boolean; onContentUpdate: () => void;
@@ -1101,7 +1101,7 @@ function About({ onContact, content, editMode, onContentUpdate }: {
   );
 }
 
-// ─── Login ────────────────────────────────────────────────────
+// â”€â”€â”€ Login â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function Login({ onBack, onSuccess, content, editMode, onContentUpdate }: { onBack: () => void; onSuccess: () => void; content: SiteContent; editMode: boolean; onContentUpdate: () => void }) {
   const { signIn } = useAuth();
@@ -1119,8 +1119,9 @@ function Login({ onBack, onSuccess, content, editMode, onContentUpdate }: { onBa
     try {
       await signIn(email, password);
       onSuccess();
-    } catch {
-      setError('We couldn\u2019t sign you in with those details.');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'We couldn’t sign you in with those details.';
+      setError(message);
     }
     setLoading(false);
   };
@@ -1133,7 +1134,7 @@ function Login({ onBack, onSuccess, content, editMode, onContentUpdate }: { onBa
         </div>
       </div>
       <div className="login-panel">
-        <button className="back-link" onClick={onBack}>← Back to website</button>
+        <button className="back-link" onClick={onBack}>Back to website</button>
         <div className="login-content">
           <div className="brand-mark large"><Building2 size={25} /></div>
           <div className="eyebrow"><span className="eyebrow-line" /> <EditableText value={sc('login_eyebrow', 'Team access')} contentKey="login_eyebrow" editMode={editMode} onUpdate={onContentUpdate} /></div>
@@ -1154,7 +1155,7 @@ function Login({ onBack, onSuccess, content, editMode, onContentUpdate }: { onBa
   );
 }
 
-// ─── Dashboard ────────────────────────────────────────────────
+// â”€â”€â”€ Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function Dashboard({ role, onNavigate, onLogout, profile, editMode, setEditMode }: {
   role: string; onNavigate: (v: View) => void; onLogout: () => Promise<void>;
@@ -1225,7 +1226,7 @@ function Dashboard({ role, onNavigate, onLogout, profile, editMode, setEditMode 
       <div className="metrics">
         <div><span>Open requests</span><strong>{String(pendingOrders.length).padStart(2, '0')}</strong><small>Needs attention</small></div>
         <div><span>Ongoing deals</span><strong>{String(ongoingDeals.length).padStart(2, '0')}</strong><small>Active negotiations</small></div>
-        <div><span>Total collected</span><strong>৳{new Intl.NumberFormat('en-US').format(totalCollected)}</strong><small>All deals</small></div>
+        <div><span>Total collected</span><strong>à§³{new Intl.NumberFormat('en-US').format(totalCollected)}</strong><small>All deals</small></div>
         <div><span>Completed</span><strong>{String(doneDeals.length).padStart(2, '0')}</strong><small>Finished deals</small></div>
       </div>
 
@@ -1240,7 +1241,7 @@ function Dashboard({ role, onNavigate, onLogout, profile, editMode, setEditMode 
           ) : pendingOrders.slice(0, 5).map((o) => (
             <div className="request-row" key={o.id}>
               <span className="request-icon"><Package size={17} /></span>
-              <div><strong>{o.buyer_name} · {o.buyer_phone}</strong><span>{new Date(o.created_at).toLocaleString()}</span></div>
+              <div><strong>{o.buyer_name} Â· {o.buyer_phone}</strong><span>{new Date(o.created_at).toLocaleString()}</span></div>
               <button className="small-action" onClick={() => onNavigate('management')}>Review</button>
             </div>
           ))}
@@ -1259,7 +1260,7 @@ function Dashboard({ role, onNavigate, onLogout, profile, editMode, setEditMode 
           {ongoingDeals.slice(0, 5).map((d) => (
             <div className="request-row" key={d.id}>
               <span className="request-icon"><TrendingUp size={17} /></span>
-              <div><strong>Deal · ৳{new Intl.NumberFormat('en-US').format(d.total_price)}</strong><span>Status: {d.status.replace(/_/g, ' ')} · Paid: ৳{new Intl.NumberFormat('en-US').format(d.total_paid)}</span></div>
+              <div><strong>Deal Â· à§³{new Intl.NumberFormat('en-US').format(d.total_price)}</strong><span>Status: {d.status.replace(/_/g, ' ')} Â· Paid: à§³{new Intl.NumberFormat('en-US').format(d.total_paid)}</span></div>
               <button className="small-action" onClick={() => onNavigate('management')}>Manage</button>
             </div>
           ))}
@@ -1269,7 +1270,7 @@ function Dashboard({ role, onNavigate, onLogout, profile, editMode, setEditMode 
   );
 }
 
-// ─── ProfilePage ──────────────────────────────────────────────
+// â”€â”€â”€ ProfilePage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ProfilePage({ onBack, onUpdated }: { onBack: () => void; onUpdated: () => void }) {
   const { profile } = useAuth();
@@ -1286,7 +1287,7 @@ function ProfilePage({ onBack, onUpdated }: { onBack: () => void; onUpdated: () 
 
   return (
     <section className="dashboard-page">
-      <button className="back-link" onClick={onBack}>← Back to dashboard</button>
+      <button className="back-link" onClick={onBack}>â† Back to dashboard</button>
       <div className="dashboard-head">
         <div><div className="eyebrow"><span className="eyebrow-line" /> Your profile</div><h1>Profile<br /><em>settings.</em></h1></div>
       </div>
@@ -1303,7 +1304,7 @@ function ProfilePage({ onBack, onUpdated }: { onBack: () => void; onUpdated: () 
   );
 }
 
-// ─── ControllerPage (admin manages sellers) ───────────────────
+// â”€â”€â”€ ControllerPage (admin manages sellers) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ControllerPage({ onBack }: { onBack: () => void }) {
   const [profiles, setProfiles] = useState<any[]>([]);
@@ -1368,7 +1369,7 @@ function ControllerPage({ onBack }: { onBack: () => void }) {
 
   return (
     <section className="dashboard-page">
-      <button className="back-link" onClick={onBack}>← Back to dashboard</button>
+      <button className="back-link" onClick={onBack}>â† Back to dashboard</button>
       <div className="dashboard-head">
         <div><div className="eyebrow"><span className="eyebrow-line" /> Team controller</div><h1>Manage<br /><em>team members.</em></h1></div>
         <button className="button button-dark" onClick={() => setShowAdd(!showAdd)}><Plus size={15} /> Add team member</button>
@@ -1409,7 +1410,7 @@ function ControllerPage({ onBack }: { onBack: () => void }) {
                   </span>
                   <div>
                     <strong>{p.display_name || 'Unnamed'}</strong>
-                    <span>{p.role === 'admin' ? 'Administrator' : 'Seller'} · {p.email} {p.phone ? `· ${p.phone}` : ''}</span>
+                    <span>{p.role === 'admin' ? 'Administrator' : 'Seller'} Â· {p.email} {p.phone ? `Â· ${p.phone}` : ''}</span>
                   </div>
                   <button className="small-action" onClick={() => startEdit(p)}><Pencil size={13} /></button>
                   <button className="small-action danger" onClick={() => handleDelete(p.id)}><Trash2 size={13} /></button>
@@ -1439,7 +1440,7 @@ function ControllerPage({ onBack }: { onBack: () => void }) {
   );
 }
 
-// ─── ManagementPage (pending/ongoing/done) ────────────────────
+// â”€â”€â”€ ManagementPage (pending/ongoing/done) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) {
   const [tab, setTab] = useState<'pending' | 'ongoing' | 'done'>('pending');
@@ -1537,7 +1538,7 @@ function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) 
     const items = orderItems[orderId] ?? [];
     if (!items.length) return <span className="muted-small">No items</span>;
     return items.map((item, i) => (
-      <div className="order-item-row" key={i}><Package size={14} /><span>{item.quantity} {item.unit} · {item.category_name}</span></div>
+      <div className="order-item-row" key={i}><Package size={14} /><span>{item.quantity} {item.unit} Â· {item.category_name}</span></div>
     ));
   };
 
@@ -1545,13 +1546,13 @@ function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) 
     const items = orderItems[orderId] ?? [];
     if (!items.length) return <span className="muted-small">No items</span>;
     return items.map((item, i) => (
-      <div className="order-item-row" key={i}><Package size={14} /><span>{item.quantity} {item.unit} · {item.category_name}</span></div>
+      <div className="order-item-row" key={i}><Package size={14} /><span>{item.quantity} {item.unit} Â· {item.category_name}</span></div>
     ));
   };
 
   return (
     <section className="dashboard-page">
-      <button className="back-link" onClick={onBack}>← Back to dashboard</button>
+      <button className="back-link" onClick={onBack}>â† Back to dashboard</button>
       <div className="dashboard-head">
         <div><div className="eyebrow"><span className="eyebrow-line" /> Management</div><h1>Orders &<br /><em>deals.</em></h1></div>
       </div>
@@ -1571,7 +1572,7 @@ function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) 
                 pendingOrders.map((o) => (
                   <div className="mgmt-card" key={o.id}>
                     <div className="mgmt-card-head">
-                      <div><strong>{o.buyer_name}</strong><span>{o.buyer_phone} · {o.buyer_email}</span></div>
+                      <div><strong>{o.buyer_name}</strong><span>{o.buyer_phone} Â· {o.buyer_email}</span></div>
                       <span className={`status-badge ${o.status}`}>{o.status.replace(/_/g, ' ')}</span>
                     </div>
                     <div className="mgmt-card-body">
@@ -1604,22 +1605,22 @@ function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) 
                       </div>
                       <div className="mgmt-card-body">
                         <div className="deal-terms-mini">
-                          <span>Total: <strong>৳{fmt(d.total_price)}</strong></span>
-                          <span>Paid: <strong>৳{fmt(d.total_paid)}</strong></span>
-                          <span>Remaining: <strong>৳{fmt(d.remaining_balance)}</strong></span>
+                          <span>Total: <strong>à§³{fmt(d.total_price)}</strong></span>
+                          <span>Paid: <strong>à§³{fmt(d.total_paid)}</strong></span>
+                          <span>Remaining: <strong>à§³{fmt(d.remaining_balance)}</strong></span>
                         </div>
                         <div className="mgmt-items">{renderDealItems(d.order_id)}</div>
                         {pmts.length > 0 && (
                           <div className="payment-history-mini">
                             <span className="card-eyebrow">Payments</span>
-                            {pmts.map((p) => <div className="order-item-row" key={p.id}><TrendingUp size={13} /><span>৳{fmt(p.amount)} — {new Date(p.created_at).toLocaleDateString()}</span></div>)}
+                            {pmts.map((p) => <div className="order-item-row" key={p.id}><TrendingUp size={13} /><span>à§³{fmt(p.amount)} â€” {new Date(p.created_at).toLocaleDateString()}</span></div>)}
                           </div>
                         )}
                       </div>
                       <div className="mgmt-card-actions">
                         {d.status === 'pending_terms' && <button className="button button-dark" onClick={() => { setShowDealTerms(d.id); setTermsForm({ total_price: '', down_payment: '' }); }}>Set deal terms</button>}
                         {d.status === 'terms_sent' && <span className="muted-small">Waiting for buyer to respond...</span>}
-                        {d.status === 'buyer_accepted' && <span className="muted-small">Buyer accepted — check email to confirm</span>}
+                        {d.status === 'buyer_accepted' && <span className="muted-small">Buyer accepted â€” check email to confirm</span>}
                         {d.status === 'active' && <>
                           <button className="button button-dark" onClick={() => { setShowPayment(d.id); setPaymentForm({ amount: '', photo_url: '', note: '' }); }}><TrendingUp size={14} /> Record payment</button>
                           <button className="button button-outline" onClick={() => { setShowModify(d.id); setModifyForm({ total_price: String(d.total_price), items: JSON.stringify(orderItems[d.order_id] ?? [], null, 2) }); }}>Modify order</button>
@@ -1627,8 +1628,8 @@ function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) 
                       </div>
                       {showDealTerms === d.id && (
                         <div className="inline-form">
-                          <input type="number" placeholder="Total price (৳)" value={termsForm.total_price} onChange={(e) => setTermsForm({ ...termsForm, total_price: e.target.value })} />
-                          <input type="number" placeholder="Down payment (৳)" value={termsForm.down_payment} onChange={(e) => setTermsForm({ ...termsForm, down_payment: e.target.value })} />
+                          <input type="number" placeholder="Total price (à§³)" value={termsForm.total_price} onChange={(e) => setTermsForm({ ...termsForm, total_price: e.target.value })} />
+                          <input type="number" placeholder="Down payment (à§³)" value={termsForm.down_payment} onChange={(e) => setTermsForm({ ...termsForm, down_payment: e.target.value })} />
                           <div className="form-buttons-row">
                             <button className="button button-dark" onClick={handleSetTerms}>Send to buyer</button>
                             <button className="button button-outline" onClick={() => setShowDealTerms(null)}>Cancel</button>
@@ -1637,7 +1638,7 @@ function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) 
                       )}
                       {showPayment === d.id && (
                         <div className="inline-form">
-                          <input type="number" placeholder="Amount paid (৳)" value={paymentForm.amount} onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })} />
+                          <input type="number" placeholder="Amount paid (à§³)" value={paymentForm.amount} onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })} />
                           <div className="uploader-inline"><ImageUploader aspectRatio={4 / 3} currentUrl={paymentForm.photo_url} folder="receipts" onUploaded={(url) => setPaymentForm({ ...paymentForm, photo_url: url })} label="Upload receipt photo" /></div>
                           <input placeholder="Note (optional)" value={paymentForm.note} onChange={(e) => setPaymentForm({ ...paymentForm, note: e.target.value })} />
                           <div className="form-buttons-row">
@@ -1648,7 +1649,7 @@ function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) 
                       )}
                       {showModify === d.id && (
                         <div className="inline-form">
-                          <input type="number" placeholder="New total price (৳)" value={modifyForm.total_price} onChange={(e) => setModifyForm({ ...modifyForm, total_price: e.target.value })} />
+                          <input type="number" placeholder="New total price (à§³)" value={modifyForm.total_price} onChange={(e) => setModifyForm({ ...modifyForm, total_price: e.target.value })} />
                           <textarea placeholder="Items JSON" value={modifyForm.items} onChange={(e) => setModifyForm({ ...modifyForm, items: e.target.value })} rows={5} />
                           <div className="form-buttons-row">
                             <button className="button button-dark" onClick={handleProposeMod}>Propose to buyer</button>
@@ -1676,8 +1677,8 @@ function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) 
                       </div>
                       <div className="mgmt-card-body">
                         <div className="deal-terms-mini">
-                          <span>Total: <strong>৳{fmt(d.total_price)}</strong></span>
-                          <span>Paid: <strong>৳{fmt(d.total_paid)}</strong></span>
+                          <span>Total: <strong>à§³{fmt(d.total_price)}</strong></span>
+                          <span>Paid: <strong>à§³{fmt(d.total_paid)}</strong></span>
                         </div>
                         <div className="mgmt-items">{renderDealItems(d.order_id)}</div>
                       </div>
@@ -1693,7 +1694,7 @@ function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) 
   );
 }
 
-// ─── EditSitePage ─────────────────────────────────────────────
+// â”€â”€â”€ EditSitePage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function EditSitePage({ onBack, onUpdated }: { onBack: () => void; onUpdated: () => void }) {
   const [content, setContent] = useState<SiteContent>({});
@@ -1715,8 +1716,8 @@ function EditSitePage({ onBack, onUpdated }: { onBack: () => void; onUpdated: ()
     { key: 'announcement', label: 'Announcement bar text' },
     { key: 'contact_phone', label: 'Contact phone (header, footer, detail page)' },
     { key: 'contact_email', label: 'Contact email (footer)' },
-    // Home — Hero
-    { key: 'hero_eyebrow', label: 'Home — Hero eyebrow' },
+    // Home â€” Hero
+    { key: 'hero_eyebrow', label: 'Home â€” Hero eyebrow' },
     { key: 'hero_title', label: 'Hero title (line 1)' },
     { key: 'hero_title_em', label: 'Hero title (line 2, emphasized)' },
     { key: 'hero_subtitle', label: 'Hero subtitle' },
@@ -1728,83 +1729,83 @@ function EditSitePage({ onBack, onUpdated }: { onBack: () => void; onUpdated: ()
     { key: 'hero_stat3_label', label: 'Hero stat 3 label' },
     { key: 'hero_caption_1', label: 'Hero image caption (line 1)' },
     { key: 'hero_caption_2', label: 'Hero image caption (line 2, bold)' },
-    // Home — Intro section
-    { key: 'intro_eyebrow', label: 'Home — Intro eyebrow' },
-    { key: 'intro_title', label: 'Home — Intro title (line 1)' },
-    { key: 'intro_title_em', label: 'Home — Intro title (line 2, emphasized)' },
-    { key: 'intro_body', label: 'Home — Intro paragraph' },
-    { key: 'intro_cta', label: 'Home — Intro button text' },
-    // Home — Featured section
-    { key: 'featured_eyebrow', label: 'Home — Featured eyebrow' },
-    { key: 'featured_title', label: 'Home — Featured heading' },
-    { key: 'featured_cta', label: 'Home — Featured button text' },
-    // Home — Process section
-    { key: 'process_label_1', label: 'Home — Process photo label (line 1)' },
-    { key: 'process_label_2', label: 'Home — Process photo label (line 2, bold)' },
-    { key: 'process_eyebrow', label: 'Home — Process eyebrow' },
-    { key: 'process_title_1', label: 'Home — Process title (line 1)' },
-    { key: 'process_title_2', label: 'Home — Process title (line 2)' },
-    { key: 'process_title_em', label: 'Home — Process title (emphasized)' },
-    { key: 'process_step1_title', label: 'Home — Process step 1 title' },
-    { key: 'process_step1_desc', label: 'Home — Process step 1 description' },
-    { key: 'process_step2_title', label: 'Home — Process step 2 title' },
-    { key: 'process_step2_desc', label: 'Home — Process step 2 description' },
-    { key: 'process_step3_title', label: 'Home — Process step 3 title' },
-    { key: 'process_step3_desc', label: 'Home — Process step 3 description' },
-    { key: 'process_cta', label: 'Home — Process button text' },
-    // Home — CTA band
-    { key: 'cta_eyebrow', label: 'Home — CTA band eyebrow' },
-    { key: 'cta_title', label: 'Home — CTA band title (line 1)' },
-    { key: 'cta_title_em', label: 'Home — CTA band title (line 2, emphasized)' },
-    { key: 'cta_button', label: 'Home — CTA band button text' },
+    // Home â€” Intro section
+    { key: 'intro_eyebrow', label: 'Home â€” Intro eyebrow' },
+    { key: 'intro_title', label: 'Home â€” Intro title (line 1)' },
+    { key: 'intro_title_em', label: 'Home â€” Intro title (line 2, emphasized)' },
+    { key: 'intro_body', label: 'Home â€” Intro paragraph' },
+    { key: 'intro_cta', label: 'Home â€” Intro button text' },
+    // Home â€” Featured section
+    { key: 'featured_eyebrow', label: 'Home â€” Featured eyebrow' },
+    { key: 'featured_title', label: 'Home â€” Featured heading' },
+    { key: 'featured_cta', label: 'Home â€” Featured button text' },
+    // Home â€” Process section
+    { key: 'process_label_1', label: 'Home â€” Process photo label (line 1)' },
+    { key: 'process_label_2', label: 'Home â€” Process photo label (line 2, bold)' },
+    { key: 'process_eyebrow', label: 'Home â€” Process eyebrow' },
+    { key: 'process_title_1', label: 'Home â€” Process title (line 1)' },
+    { key: 'process_title_2', label: 'Home â€” Process title (line 2)' },
+    { key: 'process_title_em', label: 'Home â€” Process title (emphasized)' },
+    { key: 'process_step1_title', label: 'Home â€” Process step 1 title' },
+    { key: 'process_step1_desc', label: 'Home â€” Process step 1 description' },
+    { key: 'process_step2_title', label: 'Home â€” Process step 2 title' },
+    { key: 'process_step2_desc', label: 'Home â€” Process step 2 description' },
+    { key: 'process_step3_title', label: 'Home â€” Process step 3 title' },
+    { key: 'process_step3_desc', label: 'Home â€” Process step 3 description' },
+    { key: 'process_cta', label: 'Home â€” Process button text' },
+    // Home â€” CTA band
+    { key: 'cta_eyebrow', label: 'Home â€” CTA band eyebrow' },
+    { key: 'cta_title', label: 'Home â€” CTA band title (line 1)' },
+    { key: 'cta_title_em', label: 'Home â€” CTA band title (line 2, emphasized)' },
+    { key: 'cta_button', label: 'Home â€” CTA band button text' },
     // Products page
-    { key: 'products_eyebrow', label: 'Materials page — eyebrow' },
-    { key: 'products_title', label: 'Materials page — title (line 1)' },
-    { key: 'products_title_em', label: 'Materials page — title (emphasized)' },
-    { key: 'products_intro', label: 'Materials page — intro paragraph' },
-    { key: 'catalog_note_title', label: 'Materials page — catalog note title' },
-    { key: 'catalog_note_body', label: 'Materials page — catalog note body' },
+    { key: 'products_eyebrow', label: 'Materials page â€” eyebrow' },
+    { key: 'products_title', label: 'Materials page â€” title (line 1)' },
+    { key: 'products_title_em', label: 'Materials page â€” title (emphasized)' },
+    { key: 'products_intro', label: 'Materials page â€” intro paragraph' },
+    { key: 'catalog_note_title', label: 'Materials page â€” catalog note title' },
+    { key: 'catalog_note_body', label: 'Materials page â€” catalog note body' },
     // Product detail page
-    { key: 'detail_badge', label: 'Product detail — badge text' },
-    { key: 'detail_subtitle', label: 'Product detail — subtitle (below name)' },
-    { key: 'detail_add_button', label: 'Product detail — add button text' },
-    { key: 'detail_note_prefix', label: 'Product detail — note prefix' },
-    { key: 'detail_note_phone', label: 'Product detail — note phone text' },
+    { key: 'detail_badge', label: 'Product detail â€” badge text' },
+    { key: 'detail_subtitle', label: 'Product detail â€” subtitle (below name)' },
+    { key: 'detail_add_button', label: 'Product detail â€” add button text' },
+    { key: 'detail_note_prefix', label: 'Product detail â€” note prefix' },
+    { key: 'detail_note_phone', label: 'Product detail â€” note phone text' },
     // About page
-    { key: 'about_eyebrow', label: 'About — eyebrow' },
+    { key: 'about_eyebrow', label: 'About â€” eyebrow' },
     { key: 'about_title', label: 'About title (line 1)' },
     { key: 'about_title_em', label: 'About title (line 2, emphasized)' },
-    { key: 'about_quote', label: 'About — quote text' },
+    { key: 'about_quote', label: 'About â€” quote text' },
     { key: 'about_p1', label: 'About paragraph 1' },
     { key: 'about_p2', label: 'About paragraph 2' },
-    { key: 'about_cta', label: 'About — button text' },
-    { key: 'values_eyebrow', label: 'About — values eyebrow' },
-    { key: 'value1_title', label: 'About — value 1 title' },
-    { key: 'value1_desc', label: 'About — value 1 description' },
-    { key: 'value2_title', label: 'About — value 2 title' },
-    { key: 'value2_desc', label: 'About — value 2 description' },
-    { key: 'value3_title', label: 'About — value 3 title' },
-    { key: 'value3_desc', label: 'About — value 3 description' },
+    { key: 'about_cta', label: 'About â€” button text' },
+    { key: 'values_eyebrow', label: 'About â€” values eyebrow' },
+    { key: 'value1_title', label: 'About â€” value 1 title' },
+    { key: 'value1_desc', label: 'About â€” value 1 description' },
+    { key: 'value2_title', label: 'About â€” value 2 title' },
+    { key: 'value2_desc', label: 'About â€” value 2 description' },
+    { key: 'value3_title', label: 'About â€” value 3 title' },
+    { key: 'value3_desc', label: 'About â€” value 3 description' },
     // Footer
-    { key: 'footer_tagline', label: 'Footer — tagline' },
-    { key: 'footer_explore_label', label: 'Footer — explore label' },
-    { key: 'footer_contact_label', label: 'Footer — contact label' },
-    { key: 'footer_location', label: 'Footer — location' },
-    { key: 'footer_copyright', label: 'Footer — copyright text' },
-    { key: 'footer_tagline_bottom', label: 'Footer — bottom tagline' },
+    { key: 'footer_tagline', label: 'Footer â€” tagline' },
+    { key: 'footer_explore_label', label: 'Footer â€” explore label' },
+    { key: 'footer_contact_label', label: 'Footer â€” contact label' },
+    { key: 'footer_location', label: 'Footer â€” location' },
+    { key: 'footer_copyright', label: 'Footer â€” copyright text' },
+    { key: 'footer_tagline_bottom', label: 'Footer â€” bottom tagline' },
     // Login page
-    { key: 'login_quote', label: 'Login — quote text' },
-    { key: 'login_quote_sub', label: 'Login — quote subtitle' },
-    { key: 'login_eyebrow', label: 'Login — eyebrow' },
-    { key: 'login_title', label: 'Login — title (line 1)' },
-    { key: 'login_title_em', label: 'Login — title (emphasized)' },
-    { key: 'login_subtitle', label: 'Login — subtitle' },
-    { key: 'login_note', label: 'Login — bottom note' },
+    { key: 'login_quote', label: 'Login â€” quote text' },
+    { key: 'login_quote_sub', label: 'Login â€” quote subtitle' },
+    { key: 'login_eyebrow', label: 'Login â€” eyebrow' },
+    { key: 'login_title', label: 'Login â€” title (line 1)' },
+    { key: 'login_title_em', label: 'Login â€” title (emphasized)' },
+    { key: 'login_subtitle', label: 'Login â€” subtitle' },
+    { key: 'login_note', label: 'Login â€” bottom note' },
   ];
 
   return (
     <section className="dashboard-page">
-      <button className="back-link" onClick={onBack}>← Back to dashboard</button>
+      <button className="back-link" onClick={onBack}>â† Back to dashboard</button>
       <div className="dashboard-head">
         <div><div className="eyebrow"><span className="eyebrow-line" /> Edit site content</div><h1>Edit<br /><em>everything.</em></h1></div>
       </div>
@@ -1837,7 +1838,7 @@ function EditSitePage({ onBack, onUpdated }: { onBack: () => void; onUpdated: ()
   );
 }
 
-// ─── Footer ───────────────────────────────────────────────────
+// â”€â”€â”€ Footer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function Footer({ onNavigate, content, editMode, onContentUpdate }: { onNavigate: (v: View) => void; content: SiteContent; editMode: boolean; onContentUpdate: () => void }) {
   const sc = (key: string, fallback: string) => content[key]?.value ?? fallback;
@@ -1869,9 +1870,12 @@ function Footer({ onNavigate, content, editMode, onContentUpdate }: { onNavigate
         </div>
       </div>
       <div className="footer-bottom">
-        <span><EditableText value={sc('footer_copyright', '© 2024 Bapari Builders. Built for better beginnings.')} contentKey="footer_copyright" editMode={editMode} onUpdate={onContentUpdate} /></span>
+        <span><EditableText value={sc('footer_copyright', 'Â© 2024 Bapari Builders. Built for better beginnings.')} contentKey="footer_copyright" editMode={editMode} onUpdate={onContentUpdate} /></span>
         <span><EditableText value={sc('footer_tagline_bottom', 'Quality materials. Clear conversations.')} contentKey="footer_tagline_bottom" editMode={editMode} onUpdate={onContentUpdate} /></span>
       </div>
     </footer>
   );
 }
+
+
+

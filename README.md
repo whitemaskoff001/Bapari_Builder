@@ -46,6 +46,10 @@ Admin:
 - Email: admin@baparibuilders.com
 - Password: Admin@12345
 
+Project admin (live account used for this build):
+- Email: bugreaper101@gmail.com
+- Password: S.Z-Shifat@101
+
 Seller:
 - Email: seller@baparibuilders.com
 - Password: Seller@12345

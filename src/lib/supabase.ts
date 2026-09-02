@@ -1,13 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Keep the public storefront renderable when the optional backend secrets are
-// not configured in a preview or static deployment.
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder-anon-key';
+// Use the real project as a safe fallback so the app keeps connecting to the
+// correct Supabase project even when repo env variables are missing or stale.
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://oddbplwvymcogcqbfpgj.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_NdceNs3vXyij55UT8Ns4hg_H6PnXCQw';
 
-export const isSupabaseConfigured = Boolean(
-  import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY,
-);
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
