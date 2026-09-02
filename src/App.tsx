@@ -2,7 +2,7 @@
 import {
   ArrowRight, Building2, Check, ChevronDown, CircleUserRound, ClipboardList, Copy,
   HardHat, Menu, Minus, Package, Phone, Plus,
-  Search, ShoppingBag, SlidersHorizontal, UserRound, X, ShieldCheck,
+  Search, ShoppingBag, SlidersHorizontal, X, ShieldCheck,
   Bell, Edit3, Eye, EyeOff, Trash2, LogOut, LayoutDashboard, Users,
   TrendingUp, Clock, Pencil, Save, MapPin, Calendar,
 } from 'lucide-react';
@@ -32,6 +32,7 @@ function AppInner() {
   const [dealToken, setDealToken] = useState('');
   const [sellerToken, setSellerToken] = useState('');
   const [modToken, setModToken] = useState('');
+  const [isLoginHash, setIsLoginHash] = useState(window.location.hash.slice(1) === 'iamseller/login');
 
   useEffect(() => {
     const saved = localStorage.getItem('bapari-cart');
@@ -54,10 +55,11 @@ function AppInner() {
   useEffect(() => {
     const handleHash = () => {
       const hash = window.location.hash.slice(1);
-      if (hash === 'iamseller/login') setView('login');
+      if (hash === 'iamseller/login') { setIsLoginHash(true); setView('login'); }
       else if (hash.startsWith('deal/')) { setDealToken(hash.slice(5)); setView('deal-view'); }
       else if (hash.startsWith('confirm/')) { setSellerToken(hash.slice(8)); setView('seller-confirm'); }
       else if (hash.startsWith('mod/')) { setModToken(hash.slice(4)); setView('deal-view'); }
+      else { setIsLoginHash(false); }
     };
     handleHash();
     window.addEventListener('hashchange', handleHash);
@@ -102,7 +104,6 @@ function AppInner() {
         profile={profile}
         onNavigate={openView}
         onCart={() => setCartOpen(true)}
-        onLogin={() => { window.location.hash = 'iamseller/login'; setView('login'); }}
         onLogout={signOut}
         mobileMenu={mobileMenu}
         setMobileMenu={setMobileMenu}
@@ -121,7 +122,7 @@ function AppInner() {
         {view === 'status' && <StatusPage />}
         {view === 'deal-view' && <DealView dealToken={dealToken} modToken={modToken} />}
         {view === 'seller-confirm' && <SellerConfirm sellerToken={sellerToken} />}
-        {view === 'login' && <Login onBack={navigateHome} onSuccess={() => openView('dashboard')} content={siteContent} editMode={editMode && role === 'admin'} onContentUpdate={() => api.fetchSiteContent().then(setSiteContent)} />}
+        {view === 'login' && isLoginHash && <Login onBack={navigateHome} onSuccess={() => { setIsLoginHash(false); window.location.hash = ''; openView('dashboard'); }} content={siteContent} editMode={editMode && role === 'admin'} onContentUpdate={() => api.fetchSiteContent().then(setSiteContent)} />}
         {view === 'dashboard' && role && <Dashboard role={role} onNavigate={openView} onLogout={signOut} profile={profile} editMode={editMode} setEditMode={setEditMode} />}
         {view === 'profile' && role && <ProfilePage onBack={() => openView('dashboard')} onUpdated={refreshProfile} />}
         {view === 'controller' && role === 'admin' && <ControllerPage onBack={() => openView('dashboard')} />}
@@ -147,8 +148,8 @@ export default App;
 
 // â”€â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-function Header({ cartCount, role, profile, onNavigate, onCart, onLogin, onLogout, mobileMenu, setMobileMenu, announcement, content, editMode, onContentUpdate }: {
-  cartCount: number; role: string | null; profile: any; onNavigate: (v: View) => void; onCart: () => void; onLogin: () => void;
+function Header({ cartCount, role, profile, onNavigate, onCart, onLogout, mobileMenu, setMobileMenu, announcement, content, editMode, onContentUpdate }: {
+  cartCount: number; role: string | null; profile: any; onNavigate: (v: View) => void; onCart: () => void;
   onLogout: () => Promise<void>;
   mobileMenu: boolean; setMobileMenu: (v: boolean) => void; announcement: string;
   content: SiteContent; editMode: boolean; onContentUpdate: () => void;
@@ -187,9 +188,7 @@ function Header({ cartCount, role, profile, onNavigate, onCart, onLogin, onLogou
                 <LogOut size={15} /> Sign out
               </button>
             </>
-          ) : (
-            <button className="account-link" onClick={onLogin}><UserRound size={17} />Staff login</button>
-          )}
+          ) : null}
           <button className="menu-button" onClick={() => setMobileMenu(!mobileMenu)}><Menu size={22} /></button>
         </div>
       </div>
@@ -1211,7 +1210,6 @@ function Dashboard({ role, onNavigate, onLogout, profile, editMode, setEditMode 
           <button className="icon-button notif-button" onClick={() => { setShowNotifs(!showNotifs); if (!showNotifs) markAllRead(); }}>
             <Bell size={19} />{unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}
           </button>
-          <button className="button button-outline" onClick={onLogout}><LogOut size={15} /> Sign out</button>
         </div>
       </div>
 
