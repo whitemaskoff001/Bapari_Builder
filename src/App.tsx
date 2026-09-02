@@ -1,10 +1,10 @@
-﻿import { useCallback, useEffect, useState } from 'react';
+﻿import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowRight, Building2, Check, ChevronDown, CircleUserRound, ClipboardList, Copy,
   HardHat, Menu, Minus, Package, Phone, Plus,
   Search, ShoppingBag, SlidersHorizontal, X, ShieldCheck,
   Bell, Edit3, Eye, EyeOff, Trash2, LogOut, LayoutDashboard, Users,
-  TrendingUp, Clock, Pencil, Save, MapPin, Calendar,
+  TrendingUp, Clock, Pencil, Save, MapPin, Calendar, Settings, User,
 } from 'lucide-react';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -158,6 +158,34 @@ function Header({ cartCount, role, profile, onNavigate, onCart, onLogout, mobile
   const phone = sc('contact_phone', '+880 1711 123 456');
   const brandName = sc('company_name', 'BAPARI');
   const brandSub = sc('company_subname', 'BUILDERS');
+
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const handleClick = (e: MouseEvent) => {
+      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) {
+        setSettingsOpen(false);
+      }
+    };
+    const handleEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setSettingsOpen(false); };
+    document.addEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleEsc);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleEsc);
+    };
+  }, [settingsOpen]);
+
+  const closeSettings = () => setSettingsOpen(false);
+  const goProfile = () => { closeSettings(); onNavigate('profile'); };
+  const goDashboard = () => { closeSettings(); onNavigate('dashboard'); };
+  const doSignOut = () => {
+    closeSettings();
+    if (confirm('Sign out of Bapari Builders?')) onLogout();
+  };
+
   return (
     <header className="site-header">
       <div className="announcement">
@@ -176,18 +204,41 @@ function Header({ cartCount, role, profile, onNavigate, onCart, onLogout, mobile
           <button onClick={() => onNavigate('status')}>Track order</button>
         </nav>
         <div className="nav-actions">
-          <button className="icon-button cart-button" onClick={onCart}><ShoppingBag size={19} /><span>{cartCount}</span></button>
+          {!role && (
+            <button className="icon-button cart-button" onClick={onCart}><ShoppingBag size={19} /><span>{cartCount}</span></button>
+          )}
           {role ? (
-            <>
-              <span className="account-name" title={profile?.email || ''}>
-                <CircleUserRound size={18} />
-                {profile?.display_name || (role === 'admin' ? 'Admin' : 'Seller')}
-              </span>
-              <button className="account-link" onClick={() => onNavigate('dashboard')}>Dashboard</button>
-              <button className="logout-button" onClick={() => { if (confirm('Sign out of Bapari Builders?')) onLogout(); }} title="Sign out">
-                <LogOut size={15} /> Sign out
+            <div className="settings-menu" ref={settingsRef}>
+              <button
+                className={`settings-button ${settingsOpen ? 'active' : ''}`}
+                onClick={() => setSettingsOpen((v) => !v)}
+                aria-haspopup="menu"
+                aria-expanded={settingsOpen}
+                title={profile?.email || ''}
+              >
+                <Settings size={16} />
+                <span>Setting</span>
+                <ChevronDown size={14} className={`chev ${settingsOpen ? 'open' : ''}`} />
               </button>
-            </>
+              {settingsOpen && (
+                <div className="settings-dropdown" role="menu">
+                  <div className="settings-dropdown-head">
+                    <strong>{profile?.display_name || (role === 'admin' ? 'Admin' : 'Seller')}</strong>
+                    <small>{profile?.email || ''}</small>
+                  </div>
+                  <button className="settings-item" onClick={goProfile} role="menuitem">
+                    <User size={15} /> Profile
+                  </button>
+                  <button className="settings-item" onClick={goDashboard} role="menuitem">
+                    <LayoutDashboard size={15} /> Dashboard
+                  </button>
+                  <div className="settings-divider" />
+                  <button className="settings-item danger" onClick={doSignOut} role="menuitem">
+                    <LogOut size={15} /> Sign out
+                  </button>
+                </div>
+              )}
+            </div>
           ) : null}
           <button className="menu-button" onClick={() => setMobileMenu(!mobileMenu)}><Menu size={22} /></button>
         </div>

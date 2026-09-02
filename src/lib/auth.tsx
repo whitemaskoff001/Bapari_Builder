@@ -20,12 +20,46 @@ const DEMO_ACCOUNTS: Record<string, { password: string; role: Role; displayName:
   'seller@baparibuilders.com': { password: 'Seller@12345', role: 'seller', displayName: 'Bapari Seller' },
 };
 
+const CACHE_KEY = 'bapari-session-v1';
+
+type CachedSession = { profile: ProfileRow; savedAt: number };
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+function readCache(): CachedSession | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CachedSession;
+    if (!parsed?.profile?.id || !parsed?.savedAt) return null;
+    if (Date.now() - parsed.savedAt > CACHE_TTL_MS) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeCache(profile: ProfileRow) {
+  try {
+    const payload: CachedSession = { profile, savedAt: Date.now() };
+    localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+  } catch {
+    /* ignore quota / private-mode errors */
+  }
+}
+
+function clearCache() {
+  try { localStorage.removeItem(CACHE_KEY); } catch { /* ignore */ }
+}
+
 const AuthContext = createContext<AuthState | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  // Seed from the cache so the very first paint after a refresh already
+  // shows the user as signed in — no logged-out flash.
+  const initial = readCache();
   const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<ProfileRow | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<ProfileRow | null>(initial?.profile ?? null);
+  const [loading, setLoading] = useState(!initial);
 
   const role: Role = profile?.role === 'admin' ? 'admin' : profile?.role === 'seller' ? 'seller' : null;
 
@@ -37,12 +71,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Ask Supabase to restore / refresh the persisted session.
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted) return;
       setSession(data.session);
       if (data.session) {
-        fetchMyProfile().then((p) => { if (mounted) { setProfile(p); setLoading(false); } });
+        fetchMyProfile()
+          .then((p) => {
+            if (!mounted) return;
+            if (p) {
+              setProfile(p);
+              writeCache(p);
+            } else if (initial?.profile) {
+              setProfile(initial.profile);
+            }
+          })
+          .catch(() => { /* keep cached profile on transient failure */ })
+          .finally(() => { if (mounted) setLoading(false); });
       } else {
+        // No live session — keep the cached profile so the user is not
+        // immediately logged out on a refresh that races the token refresh.
         setLoading(false);
       }
     });
@@ -51,22 +99,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (async () => {
         setSession(newSession);
         if (newSession) {
-          const p = await fetchMyProfile();
-          setProfile(p);
+          try {
+            const p = await fetchMyProfile();
+            if (p) {
+              setProfile(p);
+              writeCache(p);
+            }
+          } catch { /* ignore */ }
         } else {
-          setProfile(null);
+          // Only clear the profile if the user actually signed out — a
+          // transient null session (e.g. token refresh) should not log
+          // them out, but a real sign-out must clear state.
+          if (_event === 'SIGNED_OUT') {
+            setProfile(null);
+            clearCache();
+          }
         }
         setLoading(false);
       })();
     });
 
     return () => { mounted = false; sub.subscription.unsubscribe(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const refreshProfile = async () => {
     if (!isSupabaseConfigured) return;
     const p = await fetchMyProfile();
-    setProfile(p);
+    if (p) {
+      setProfile(p);
+      writeCache(p);
+    }
   };
 
   const signIn = async (email: string, password: string) => {
@@ -85,6 +148,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           created_at: new Date().toISOString(),
         };
         setProfile(fallbackProfile);
+        writeCache(fallbackProfile);
         setSession(null);
         return { role: demoAccount.role };
       }
@@ -105,6 +169,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             created_at: new Date().toISOString(),
           };
           setProfile(fallbackProfile);
+          writeCache(fallbackProfile);
           setSession(null);
           return { role: demoAccount.role };
         }
@@ -116,9 +181,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .select('*')
         .eq('id', data.user.id)
         .maybeSingle();
-      setProfile(prof);
+      const nextProfile = prof ?? {
+        id: data.user.id,
+        email: data.user.email ?? normalizedEmail,
+        role: 'admin',
+        display_name: demoAccount?.displayName || (data.user.email ?? 'Staff'),
+        phone: '',
+        avatar_url: '',
+        created_at: new Date().toISOString(),
+      } as ProfileRow;
+      setProfile(nextProfile);
+      writeCache(nextProfile);
       setSession(data.session);
-      return { role: (prof?.role === 'admin' ? 'admin' : 'seller') as Role };
+      return { role: (nextProfile.role === 'admin' ? 'admin' : 'seller') as Role };
     } catch (error) {
       if (demoAccount && password === demoAccount.password) {
         const fallbackProfile: ProfileRow = {
@@ -131,6 +206,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           created_at: new Date().toISOString(),
         };
         setProfile(fallbackProfile);
+        writeCache(fallbackProfile);
         setSession(null);
         return { role: demoAccount.role };
       }
@@ -142,11 +218,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!isSupabaseConfigured) {
       setSession(null);
       setProfile(null);
+      clearCache();
       return;
     }
     await supabase.auth.signOut();
     setSession(null);
     setProfile(null);
+    clearCache();
   };
 
   return (

@@ -27,10 +27,25 @@ img { display: block; max-width: 100%; }
 .icon-button, .menu-button, .close-button { border: 0; background: transparent; color: #29332d; position: relative; }
 .cart-button span { position: absolute; top: -9px; right: -9px; width: 16px; height: 16px; display: grid; place-items: center; border-radius: 50%; background: #df7a4c; color: white; font-size: 9px; }
 .account-link { display: flex; align-items: center; gap: 7px; }
-.account-name { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 3px; background: #eeece4; color: #26372c; font-size: 11px; font-weight: 700; max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.account-name svg { color: #df7a4c; flex-shrink: 0; }
-.logout-button { display: inline-flex; align-items: center; gap: 7px; min-height: 38px; padding: 0 16px; border: 1px solid #cbd0cb; border-radius: 3px; background: transparent; color: #334137; font-size: 11px; font-weight: 700; transition: background .2s, color .2s, border-color .2s; }
-.logout-button:hover { background: #b64d41; color: #fff; border-color: #b64d41; }
+.settings-menu { position: relative; }
+.settings-button { display: inline-flex; align-items: center; gap: 8px; min-height: 38px; padding: 0 16px; border: 1px solid #cbd0cb; border-radius: 3px; background: transparent; color: #334137; font-size: 11px; font-weight: 700; transition: background .2s, color .2s, border-color .2s; }
+.settings-button:hover, .settings-button.active { background: #26372c; color: #fff; border-color: #26372c; }
+.settings-button:hover .chev, .settings-button.active .chev { color: #e3ac6b; }
+.settings-button .chev { transition: transform .2s, color .2s; color: #8c948e; }
+.settings-button .chev.open { transform: rotate(180deg); }
+.settings-dropdown { position: absolute; right: 0; top: calc(100% + 10px); min-width: 240px; padding: 6px; background: #fff; border: 1px solid #dddcd4; border-radius: 4px; box-shadow: 0 12px 30px rgba(20,29,24,.14); z-index: 30; }
+.settings-dropdown-head { padding: 12px 14px; border-bottom: 1px solid #ece9e1; }
+.settings-dropdown-head strong { display: block; color: #26372c; font-size: 12px; }
+.settings-dropdown-head small { display: block; margin-top: 3px; color: #8a938b; font-size: 10px; word-break: break-all; }
+.settings-item { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 0; border-radius: 3px; background: transparent; color: #334137; font-size: 11px; font-weight: 600; text-align: left; transition: background .15s, color .15s; }
+.settings-item:hover { background: #eeece4; color: #26372c; }
+.settings-item svg { color: #8c948e; flex-shrink: 0; }
+.settings-item:hover svg { color: #df7a4c; }
+.settings-item.danger { color: #b64d41; }
+.settings-item.danger svg { color: #b64d41; }
+.settings-item.danger:hover { background: #f4dad6; color: #8a3a30; }
+.settings-item.danger:hover svg { color: #8a3a30; }
+.settings-divider { height: 1px; margin: 6px 0; background: #ece9e1; }
 .menu-button { display: none; }
 .hero { min-height: 650px; padding: 70px 7vw 72px; display: grid; grid-template-columns: 1.05fr 1fr; gap: 4vw; align-items: center; position: relative; color: white; background: #28392f; overflow: hidden; }
 .hero-copy { max-width: 560px; padding: 0; position: relative; z-index: 2; }
