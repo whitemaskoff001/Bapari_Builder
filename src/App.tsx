@@ -31,6 +31,33 @@ function staffLoginRequested() {
   return hash === 'iamseller/login' || path.endsWith('/iamseller/login');
 }
 
+type ManageFocus = {
+  tab: 'pending' | 'ongoing' | 'done';
+  orderId?: string;
+  dealId?: string;
+  action?: string;
+};
+
+function parseManageHash(hash: string): ManageFocus | null {
+  const parts = hash.split('/').filter(Boolean);
+  if (parts[0] !== 'manage' || !parts[1]) return null;
+  const kind = parts[1];
+  const id = parts[2];
+  if (kind === 'pending') return { tab: 'pending', orderId: id, action: 'review' };
+  if (kind === 'terms') return { tab: 'ongoing', dealId: id, action: 'set_terms' };
+  if (kind === 'confirm') return { tab: 'ongoing', dealId: id, action: 'confirm' };
+  if (kind === 'ongoing') return { tab: 'ongoing', dealId: id, action: 'view' };
+  if (kind === 'done') return { tab: 'done', dealId: id, action: 'view' };
+  return { tab: 'pending', orderId: id };
+}
+
+function itemLine(item: { quantity?: number; unit?: string; category_name?: string; option_selections?: Record<string, string> }) {
+  const extras = item.option_selections
+    ? Object.entries(item.option_selections).filter(([, v]) => v && v !== item.unit).map(([, v]) => v).join(', ')
+    : '';
+  return `${item.quantity ?? ''} ${item.unit ?? ''} ${item.category_name ?? ''}${extras ? ` · ${extras}` : ''}`.trim();
+}
+
 function AppInner() {
   const { role, loading, signOut, profile, refreshProfile } = useAuth();
   const [view, setView] = useState<View>('home');
@@ -47,6 +74,7 @@ function AppInner() {
   const [sellerToken, setSellerToken] = useState('');
   const [modToken, setModToken] = useState('');
   const [isLoginHash, setIsLoginHash] = useState(staffLoginRequested());
+  const [manageFocus, setManageFocus] = useState<ManageFocus | null>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem('bapari-cart');
@@ -65,20 +93,34 @@ function AppInner() {
     return () => window.clearTimeout(t);
   }, [toast]);
 
-  // Handle hash-based routing for hidden login and buyer token pages
+  // Handle hash-based routing for hidden login, staff manage links, and buyer token pages
   useEffect(() => {
+    if (loading) return;
     const handleHash = () => {
       const hash = window.location.hash.slice(1);
-      if (staffLoginRequested()) { setIsLoginHash(true); setView('login'); }
-      else if (hash.startsWith('deal/')) { setDealToken(hash.slice(5)); setModToken(''); setView('deal-view'); }
-      else if (hash.startsWith('confirm/')) { setSellerToken(hash.slice(8)); setView('seller-confirm'); }
-      else if (hash.startsWith('mod/')) { setModToken(hash.slice(4)); setDealToken(''); setView('deal-view'); }
-      else { setIsLoginHash(false); }
+      if (staffLoginRequested()) { setIsLoginHash(true); setView('login'); return; }
+      if (hash.startsWith('deal/')) { setIsLoginHash(false); setDealToken(hash.slice(5)); setModToken(''); setView('deal-view'); return; }
+      if (hash.startsWith('confirm/')) { setIsLoginHash(false); setSellerToken(hash.slice(8)); setView('seller-confirm'); return; }
+      if (hash.startsWith('mod/')) { setIsLoginHash(false); setModToken(hash.slice(4)); setDealToken(''); setView('deal-view'); return; }
+      if (hash.startsWith('manage/')) {
+        if (!role) {
+          try { sessionStorage.setItem('bapari-after-login', hash); } catch { /* ignore */ }
+          setIsLoginHash(true);
+          setView('login');
+          return;
+        }
+        const focus = parseManageHash(hash);
+        if (focus) setManageFocus(focus);
+        setIsLoginHash(false);
+        setView('management');
+        return;
+      }
+      setIsLoginHash(false);
     };
     handleHash();
     window.addEventListener('hashchange', handleHash);
     return () => window.removeEventListener('hashchange', handleHash);
-  }, []);
+  }, [loading, role]);
 
   const openView = useCallback((next: View) => {
     setView(next);
@@ -104,6 +146,27 @@ function AppInner() {
 
   const navigateHome = useCallback(() => openView('home'), [openView]);
 
+  const openNotification = useCallback((n: NotificationRow) => {
+    api.markNotificationRead(n.id).catch(() => {});
+    const d = (n.data || {}) as Record<string, unknown>;
+    if ((d.action === 'confirm' || n.type === 'deal_accepted') && d.seller_token) {
+      setSellerToken(String(d.seller_token));
+      window.location.hash = `confirm/${d.seller_token}`;
+      setView('seller-confirm');
+      return;
+    }
+    const tab = d.tab === 'done' ? 'done' : d.tab === 'ongoing' ? 'ongoing' : 'pending';
+    const focus: ManageFocus = {
+      tab,
+      orderId: d.order_id ? String(d.order_id) : undefined,
+      dealId: d.deal_id ? String(d.deal_id) : undefined,
+      action: d.action ? String(d.action) : 'review',
+    };
+    setManageFocus(focus);
+    setView('management');
+    setMobileMenu(false);
+  }, []);
+
   const sc = (key: string, fallback: string) => siteContent[key]?.value ?? fallback;
 
   if (loading) {
@@ -125,6 +188,7 @@ function AppInner() {
         content={siteContent}
         editMode={editMode && role === 'admin'}
         onContentUpdate={() => api.fetchSiteContent().then(setSiteContent)}
+        onOpenNotification={openNotification}
       />
       <main>
         {view === 'home' && <Home onBrowse={() => openView('products')} onAbout={() => openView('about')} onProduct={openProduct} content={siteContent} editMode={editMode && role === 'admin'} onContentUpdate={() => api.fetchSiteContent().then(setSiteContent)} />}
@@ -136,11 +200,17 @@ function AppInner() {
         {view === 'status' && <StatusPage />}
         {view === 'deal-view' && <DealView dealToken={dealToken} modToken={modToken} />}
         {view === 'seller-confirm' && <SellerConfirm sellerToken={sellerToken} />}
-        {view === 'login' && isLoginHash && <Login onBack={navigateHome} onSuccess={() => { setIsLoginHash(false); window.location.hash = ''; openView('dashboard'); }} content={siteContent} editMode={editMode && role === 'admin'} onContentUpdate={() => api.fetchSiteContent().then(setSiteContent)} />}
-        {view === 'dashboard' && role && <Dashboard role={role} onNavigate={openView} onLogout={signOut} profile={profile} editMode={editMode} setEditMode={setEditMode} />}
+        {view === 'login' && isLoginHash && <Login onBack={navigateHome} onSuccess={() => {
+          setIsLoginHash(false);
+          let after = '';
+          try { after = sessionStorage.getItem('bapari-after-login') || ''; sessionStorage.removeItem('bapari-after-login'); } catch { /* ignore */ }
+          if (after) window.location.hash = after;
+          else { window.location.hash = ''; openView('dashboard'); }
+        }} content={siteContent} editMode={editMode && role === 'admin'} onContentUpdate={() => api.fetchSiteContent().then(setSiteContent)} />}
+        {view === 'dashboard' && role && <Dashboard role={role} onNavigate={openView} onLogout={signOut} profile={profile} editMode={editMode} setEditMode={setEditMode} onOpenNotification={openNotification} />}
         {view === 'profile' && role && <ProfilePage onBack={() => openView('dashboard')} onUpdated={refreshProfile} />}
         {view === 'controller' && role === 'admin' && <ControllerPage onBack={() => openView('dashboard')} />}
-        {view === 'management' && role && <ManagementPage role={role} onBack={() => openView('dashboard')} />}
+        {view === 'management' && role && <ManagementPage role={role} onBack={() => openView('dashboard')} focus={manageFocus} />}
         {view === 'edit-site' && role === 'admin' && <EditSitePage onBack={() => openView('dashboard')} onUpdated={() => api.fetchSiteContent().then(setSiteContent)} />}
       </main>
       <Footer onNavigate={openView} content={siteContent} editMode={editMode && role === 'admin'} onContentUpdate={() => api.fetchSiteContent().then(setSiteContent)} />
@@ -162,11 +232,60 @@ export default App;
 
 // â”€â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-function Header({ cartCount, role, profile, onNavigate, onCart, onLogout, mobileMenu, setMobileMenu, announcement, content, editMode, onContentUpdate }: {
+function StaffBell({ onOpen }: { onOpen: (n: NotificationRow) => void }) {
+  const [notifs, setNotifs] = useState<NotificationRow[]>([]);
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+
+  const load = () => { api.fetchNotifications().then(setNotifs).catch(() => {}); };
+  useEffect(() => { load(); const t = window.setInterval(load, 8000); return () => window.clearInterval(t); }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e: MouseEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
+
+  const unread = notifs.filter((n) => !n.is_read).length;
+
+  return (
+    <div className="header-bell-wrap" ref={wrapRef}>
+      <button className="icon-button notif-button" onClick={() => setOpen((v) => !v)} title="Notifications">
+        <Bell size={19} />{unread > 0 && <span className="notif-badge">{unread}</span>}
+      </button>
+      {open && (
+        <div className="header-notif-panel">
+          <div className="notif-panel-head"><h2>Notifications</h2><button className="text-button" onClick={() => setOpen(false)}>Close</button></div>
+          {notifs.length === 0 ? <p className="empty-text">No notifications yet.</p> : notifs.slice(0, 25).map((n) => (
+            <button
+              className="notif-row"
+              key={n.id}
+              onClick={() => { setOpen(false); onOpen(n); }}
+            >
+              <span className={`notif-dot ${n.is_read ? 'read' : ''}`} />
+              <div>
+                <strong>{n.title}</strong>
+                <small>{n.message}</small>
+                <span className="notif-time">{new Date(n.created_at).toLocaleString()}</span>
+                <span className="open-hint">Open this notice →</span>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Header({ cartCount, role, profile, onNavigate, onCart, onLogout, mobileMenu, setMobileMenu, announcement, content, editMode, onContentUpdate, onOpenNotification }: {
   cartCount: number; role: string | null; profile: any; onNavigate: (v: View) => void; onCart: () => void;
   onLogout: () => Promise<void>;
   mobileMenu: boolean; setMobileMenu: (v: boolean) => void; announcement: string;
   content: SiteContent; editMode: boolean; onContentUpdate: () => void;
+  onOpenNotification: (n: NotificationRow) => void;
 }) {
   const sc = (key: string, fallback: string) => content[key]?.value ?? fallback;
   const phone = sc('contact_phone', '+880 1711 123 456');
@@ -221,6 +340,9 @@ function Header({ cartCount, role, profile, onNavigate, onCart, onLogout, mobile
           {!role && (
             <button className="icon-button cart-button" onClick={onCart}><ShoppingBag size={19} /><span>{cartCount}</span></button>
           )}
+          {role ? (
+            <StaffBell onOpen={onOpenNotification} />
+          ) : null}
           {role ? (
             <div className="settings-menu" ref={settingsRef}>
               <button
@@ -847,7 +969,13 @@ function OrderConfirmation({ token, reference, onHome }: { token: string; refere
         <h1>Waiting for<br /><em>confirmation.</em></h1>
         {loading ? <p>Loading your order details...</p> : order ? (
           <>
-            <p>Our team has received your request and will call you at <strong>{order.buyer_phone}</strong> to confirm availability and pricing.</p>
+            <p>Waiting for confirmation. Our team will call you at <strong>{order.buyer_phone}</strong> to negotiate availability and pricing.</p>
+            <div className="order-detail-grid">
+              <div className="order-detail-cell"><span className="card-eyebrow">Name</span><span>{order.buyer_name}</span></div>
+              <div className="order-detail-cell"><span className="card-eyebrow">Phone</span><span>{order.buyer_phone}</span></div>
+              <div className="order-detail-cell"><span className="card-eyebrow">Email</span><span>{order.buyer_email}</span></div>
+              <div className="order-detail-cell"><span className="card-eyebrow">Delivery address</span><span>{order.delivery_address}</span></div>
+            </div>
             <div className="order-token-box">
               <span className="card-eyebrow">Your order reference</span>
               <strong className="reference-display">{reference || order.reference_number || token}</strong>
@@ -875,7 +1003,7 @@ function OrderConfirmation({ token, reference, onHome }: { token: string; refere
               {(order.items ?? []).map((item: any, i: number) => (
                 <div className="order-item-row" key={i}>
                   <Package size={16} />
-                  <span>{item.quantity} {item.unit} Â· {item.category_name}</span>
+                  <span>{itemLine(item)}</span>
                 </div>
               ))}
             </div>
@@ -1035,7 +1163,9 @@ function DealView({ dealToken, modToken }: { dealToken: string; modToken: string
         {result === 'accepted' ? (
           <div className="deal-result accepted">
             <Check size={30} /><h2>Terms accepted!</h2>
-            <p>{isModification ? 'The updated terms have been accepted. Our team will be in touch.' : 'Thank you! Our team will confirm the order from their end shortly. You\'ll receive a notification by email.'}</p>
+            <p>{isModification
+              ? 'The updated materials have been accepted. Our team will be in touch.'
+              : 'A notification was sent to the seller. They should confirm the order from their email. After they confirm, you will get the agreement page with total price, paid (0 the first time), and remaining.'}</p>
           </div>
         ) : result === 'rejected' ? (
           <div className="deal-result rejected">
@@ -1113,7 +1243,7 @@ function SellerConfirm({ sellerToken }: { sellerToken: string }) {
       <div className="status-card">
         <div className="status-icon"><Check size={25} /></div>
         <h1>Deal<br /><em>confirmed.</em></h1>
-        <p>The agreement is now active. Both parties have been notified. You can track this deal from your dashboard.</p>
+        <p>The agreement is now active. Buyer, seller, and admin were emailed the agreement page with total price, paid (0 the first time), and remaining.</p>
       </div>
     </section>
   );
@@ -1229,9 +1359,10 @@ function Login({ onBack, onSuccess, content, editMode, onContentUpdate }: { onBa
 
 // â”€â”€â”€ Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-function Dashboard({ role, onNavigate, onLogout, profile, editMode, setEditMode }: {
+function Dashboard({ role, onNavigate, onLogout, profile, editMode, setEditMode, onOpenNotification }: {
   role: string; onNavigate: (v: View) => void; onLogout: () => Promise<void>;
   profile: any; editMode: boolean; setEditMode: (v: boolean) => void;
+  onOpenNotification: (n: NotificationRow) => void;
 }) {
   const [notifs, setNotifs] = useState<NotificationRow[]>([]);
   const [showNotifs, setShowNotifs] = useState(false);
@@ -1254,7 +1385,7 @@ function Dashboard({ role, onNavigate, onLogout, profile, editMode, setEditMode 
   const totalCollected = deals.reduce((sum, d) => sum + (d.total_paid || 0), 0);
 
   const markAllRead = async () => {
-    for (const n of notifs.filter((n) => !n.is_read)) {
+    for (const n of notifs.filter((x) => !x.is_read)) {
       await api.markNotificationRead(n.id);
     }
     loadData();
@@ -1268,7 +1399,7 @@ function Dashboard({ role, onNavigate, onLogout, profile, editMode, setEditMode 
           <h1>Hello, <em>{profile?.display_name || role}</em></h1>
         </div>
         <div className="dashboard-head-actions">
-          <button className="icon-button notif-button" onClick={() => { setShowNotifs(!showNotifs); if (!showNotifs) markAllRead(); }}>
+          <button className="icon-button notif-button" onClick={() => setShowNotifs(!showNotifs)}>
             <Bell size={19} />{unreadCount > 0 && <span className="notif-badge">{unreadCount}</span>}
           </button>
         </div>
@@ -1278,10 +1409,15 @@ function Dashboard({ role, onNavigate, onLogout, profile, editMode, setEditMode 
         <div className="notifications-panel">
           <div className="notif-panel-head"><h2>Notifications</h2><button className="text-button" onClick={() => setShowNotifs(false)}>Close</button></div>
           {notifs.length === 0 ? <p className="empty-text">No notifications yet.</p> : notifs.slice(0, 20).map((n) => (
-            <div className="notif-row" key={n.id}>
+            <button className="notif-row" key={n.id} onClick={() => { setShowNotifs(false); onOpenNotification(n); }}>
               <span className={`notif-dot ${n.is_read ? 'read' : ''}`} />
-              <div><strong>{n.title}</strong><small>{n.message}</small><span className="notif-time">{new Date(n.created_at).toLocaleString()}</span></div>
-            </div>
+              <div>
+                <strong>{n.title}</strong>
+                <small>{n.message}</small>
+                <span className="notif-time">{new Date(n.created_at).toLocaleString()}</span>
+                <span className="open-hint">Open this notice →</span>
+              </div>
+            </button>
           ))}
         </div>
       )}
@@ -1513,8 +1649,8 @@ function ControllerPage({ onBack }: { onBack: () => void }) {
 
 // â”€â”€â”€ ManagementPage (pending/ongoing/done) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) {
-  const [tab, setTab] = useState<'pending' | 'ongoing' | 'done'>('pending');
+function ManagementPage({ role, onBack, focus }: { role: string; onBack: () => void; focus?: ManageFocus | null }) {
+  const [tab, setTab] = useState<'pending' | 'ongoing' | 'done'>(focus?.tab || 'pending');
   const [orders, setOrders] = useState<any[]>([]);
   const [deals, setDeals] = useState<any[]>([]);
   const [orderItems, setOrderItems] = useState<Record<string, any[]>>({});
@@ -1553,6 +1689,23 @@ function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) 
   };
 
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    if (!focus) return;
+    setTab(focus.tab);
+    if (focus.action === 'set_terms' && focus.dealId) {
+      setShowDealTerms(focus.dealId);
+      setTermsForm({ total_price: '', down_payment: '' });
+    }
+    if (focus.action === 'pay' && focus.dealId) {
+      setShowPayment(focus.dealId);
+      setPaymentForm({ amount: '', photo_url: '', note: '' });
+    }
+    window.setTimeout(() => {
+      const el = document.getElementById(focus.dealId ? `deal-${focus.dealId}` : `order-${focus.orderId || ''}`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 400);
+  }, [focus]);
 
   const pendingOrders = orders.filter((o) => o.status === 'pending' || o.status === 'picked_up');
   const activeDeals = deals.filter((d) => ['pending_terms', 'terms_sent', 'buyer_accepted', 'seller_confirmed', 'active'].includes(d.status));
@@ -1615,7 +1768,7 @@ function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) 
     const items = orderItems[orderId] ?? [];
     if (!items.length) return <span className="muted-small">No items</span>;
     return items.map((item, i) => (
-      <div className="order-item-row" key={i}><Package size={14} /><span>{item.quantity} {item.unit} Â· {item.category_name}</span></div>
+      <div className="order-item-row" key={i}><Package size={14} /><span>{itemLine(item)}</span></div>
     ));
   };
 
@@ -1623,7 +1776,7 @@ function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) 
     const items = orderItems[orderId] ?? [];
     if (!items.length) return <span className="muted-small">No items</span>;
     return items.map((item, i) => (
-      <div className="order-item-row" key={i}><Package size={14} /><span>{item.quantity} {item.unit} Â· {item.category_name}</span></div>
+      <div className="order-item-row" key={i}><Package size={14} /><span>{itemLine(item)}</span></div>
     ));
   };
 
@@ -1647,7 +1800,7 @@ function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) 
             <div className="mgmt-list">
               {pendingOrders.length === 0 ? <div className="empty-management"><ClipboardList size={29} /><h3>No pending orders</h3><p>New orders will appear here for pickup.</p></div> :
                 pendingOrders.map((o) => (
-                  <div className="mgmt-card" key={o.id}>
+                  <div className={`mgmt-card ${focus?.orderId === o.id ? 'focused' : ''}`} id={`order-${o.id}`} key={o.id}>
                     <div className="mgmt-card-head">
                       <div><strong>{o.buyer_name}</strong><span>{o.reference_number ? `${o.reference_number} · ` : ''}{o.buyer_phone} · {o.buyer_email}</span></div>
                       <span className={`status-badge ${o.status}`}>{o.status.replace(/_/g, ' ')}</span>
@@ -1675,7 +1828,7 @@ function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) 
                   const order = orders.find((o) => o.id === d.order_id);
                   const pmts = dealPayments[d.id] ?? [];
                   return (
-                    <div className="mgmt-card" key={d.id}>
+                    <div className={`mgmt-card ${focus?.dealId === d.id ? 'focused' : ''}`} id={`deal-${d.id}`} key={d.id}>
                       <div className="mgmt-card-head">
                         <div><strong>{order?.buyer_name ?? 'Unknown'}</strong><span>{order?.buyer_phone}</span></div>
                         <span className={`status-badge ${d.status}`}>{d.status.replace(/_/g, ' ')}</span>
@@ -1708,6 +1861,7 @@ function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) 
                         <div className="inline-form">
                           <input type="number" placeholder="Total price (৳)" value={termsForm.total_price} onChange={(e) => setTermsForm({ ...termsForm, total_price: e.target.value })} />
                           <input type="number" placeholder="Pay now (৳)" value={termsForm.down_payment} onChange={(e) => setTermsForm({ ...termsForm, down_payment: e.target.value })} />
+                          <p className="terms-preview">Left for later (automatic): {formatTaka(Math.max(0, (parseFloat(termsForm.total_price) || 0) - (parseFloat(termsForm.down_payment) || 0)))}</p>
                           <div className="form-buttons-row">
                             <button className="button button-dark" onClick={handleSetTerms}>Send to buyer</button>
                             <button className="button button-outline" onClick={() => setShowDealTerms(null)}>Cancel</button>
@@ -1766,7 +1920,7 @@ function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) 
                 doneDeals.map((d) => {
                   const order = orders.find((o) => o.id === d.order_id);
                   return (
-                    <div className="mgmt-card" key={d.id}>
+                    <div className={`mgmt-card ${focus?.dealId === d.id ? 'focused' : ''}`} id={`deal-${d.id}`} key={d.id}>
                       <div className="mgmt-card-head">
                         <div><strong>{order?.buyer_name ?? 'Unknown'}</strong><span>{order?.buyer_phone}</span></div>
                         <span className={`status-badge ${d.status}`}>{d.status.replace(/_/g, ' ')}</span>

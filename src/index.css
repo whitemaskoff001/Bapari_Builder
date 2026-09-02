@@ -348,12 +348,21 @@ select { padding: 0 13px; outline: none; cursor: pointer; }
 .notif-badge { position: absolute; top: -6px; right: -6px; width: 16px; height: 16px; display: grid; place-items: center; border-radius: 50%; background: #df7a4c; color: white; font-size: 8px; font-weight: 700; }
 .notifications-panel { margin-bottom: 20px; padding: 20px; background: #eeece4; max-height: 400px; overflow: auto; }
 .notif-panel-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-.notif-row { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #d6d5cd; }
+.notif-row { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #d6d5cd; width: 100%; text-align: left; background: transparent; border-left: 0; border-right: 0; border-top: 0; cursor: pointer; font: inherit; }
+.notif-row:hover { background: #e6e4dc; }
+.notif-row.open-hint { color: #df7a4c; font-size: 9px; font-weight: 700; margin-top: 6px; display: block; }
 .notif-dot { width: 8px; height: 8px; border-radius: 50%; background: #df7a4c; margin-top: 4px; flex-shrink: 0; }
 .notif-dot.read { background: #c8ccc4; }
 .notif-row strong { display: block; color: #3c493f; font-size: 11px; }
-.notif-row small { display: block; margin-top: 4px; color: #7a837b; font-size: 10px; }
+.notif-row small { display: block; margin-top: 4px; color: #7a837b; font-size: 10px; white-space: pre-wrap; line-height: 1.5; }
 .notif-time { display: block; margin-top: 4px; color: #a0a8a0; font-size: 9px; }
+.header-bell-wrap { position: relative; }
+.header-notif-panel { position: absolute; right: 0; top: 42px; width: min(420px, 92vw); max-height: 70vh; overflow: auto; background: #f4f2ed; box-shadow: 0 16px 40px rgba(29,39,31,.16); padding: 16px 18px; z-index: 40; }
+.mgmt-card.focused { outline: 2px solid #df7a4c; outline-offset: 2px; }
+.terms-preview { margin: 8px 0 0; color: #5a635b; font-size: 11px; }
+.order-detail-grid { display: grid; gap: 8px; margin: 16px 0; }
+.order-detail-cell { background: #f9f8f3; padding: 10px 12px; }
+.order-detail-cell .card-eyebrow { display: block; margin-bottom: 4px; }
 .mgmt-list { display: flex; flex-direction: column; gap: 14px; }
 .mgmt-card { padding: 24px; background: #eeece4; }
 .mgmt-card-head { display: flex; justify-content: space-between; align-items: start; margin-bottom: 14px; }
