@@ -48,6 +48,7 @@ export interface OrderRow {
   status: string;
   picked_up_by: string | null;
   access_token: string;
+  reference_number?: string;
   created_at: string;
   updated_at: string;
 }

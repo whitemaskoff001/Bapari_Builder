@@ -93,7 +93,7 @@ BEGIN
 
   INSERT INTO orders (buyer_name, buyer_email, buyer_phone, delivery_address, reference_number)
   VALUES (p_buyer_name, lower(p_buyer_email), p_buyer_phone, p_delivery_address, v_reference)
-  RETURNING id, access_token INTO v_order_id, v_access_token;
+  RETURNING id, orders.access_token INTO v_order_id, v_access_token;
 
   FOR v_item IN SELECT jsonb_array_elements(p_items) LOOP
     INSERT INTO order_items (order_id, category_id, category_name, quantity, unit, option_selections)

@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Bapari Builders</title>
+    <script>
+      (function () {
+        var base = '/Bapari_Builder';
+        var path = location.pathname || '';
+        if (path.indexOf('iamseller/login') !== -1) {
+          location.replace(base + '/#iamseller/login');
+          return;
+        }
+        location.replace(base + '/' + (location.hash || ''));
+      })();
+    </script>
+  </head>
+  <body>
+    <p>Redirecting…</p>
+  </body>
+</html>

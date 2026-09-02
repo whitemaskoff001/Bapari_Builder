@@ -133,9 +133,23 @@ export async function fetchCategoryOptionGroups(categoryId: string): Promise<Opt
 
 // ─── Orders ───────────────────────────────────────────────────
 
+export function publicAppUrl(hash = '') {
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://whitemaskoff001.github.io';
+  const base = (import.meta.env.BASE_URL || '/').replace(/\/$/, '');
+  const path = `${origin}${base}`;
+  return hash ? `${path}/#${hash.replace(/^#/, '')}` : path;
+}
+
+export function apiErrorMessage(err: unknown, fallback = 'Something went wrong. Please try again.') {
+  if (!err) return fallback;
+  if (typeof err === 'string') return err;
+  const anyErr = err as { message?: string; details?: string; hint?: string; error?: string };
+  return anyErr.message || anyErr.details || anyErr.error || fallback;
+}
+
 export async function placeOrder(
   name: string, email: string, phone: string, address: string,
-  items: Array<{ category_name: string; quantity: number; unit: string; option_selections: Record<string, string> }>,
+  items: Array<{ category_id?: string; category_name: string; quantity: number; unit: string; option_selections: Record<string, string> }>,
 ): Promise<{ order_id: string; access_token: string; reference_number: string }> {
   const { data, error } = await supabase.rpc('place_order', {
     p_buyer_name: name,
@@ -194,6 +208,14 @@ export async function buyerRejectDeal(buyerToken: string) {
 export async function sellerConfirmDeal(sellerToken: string) {
   const { data, error } = await supabase.rpc('seller_confirm_deal', {
     p_seller_token: sellerToken,
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function confirmDealAsStaff(dealId: string) {
+  const { data, error } = await supabase.rpc('confirm_deal_as_staff', {
+    p_deal_id: dealId,
   });
   if (error) throw error;
   return data;
@@ -324,38 +346,46 @@ export async function fetchMyProfile(): Promise<ProfileRow | null> {
   return data;
 }
 
-export async function createStaffAccount(email: string, password: string, role: string, displayName: string, phone: string) {
-  const { data, error } = await supabase.rpc('create_staff_account', {
-    p_email: email,
-    p_password: password,
-    p_role: role,
-    p_display_name: displayName,
-    p_phone: phone,
+async function staffAdmin(body: Record<string, unknown>) {
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+  if (!token) throw new Error('You must be signed in as admin.');
+  const url = `${import.meta.env.VITE_SUPABASE_URL || 'https://oddbplwvymcogcqbfpgj.supabase.co'}/functions/v1/staff-admin`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      apikey: import.meta.env.VITE_SUPABASE_ANON_KEY || '',
+    },
+    body: JSON.stringify(body),
   });
-  if (error) throw error;
-  return data;
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(json.error || 'Staff update failed');
+  return json;
+}
+
+export async function createStaffAccount(email: string, password: string, role: string, displayName: string, phone: string) {
+  return staffAdmin({ action: 'create', email, password, role, display_name: displayName, phone });
 }
 
 export async function updateStaffAccount(
   userId: string,
   email?: string, role?: string, displayName?: string, phone?: string, password?: string,
 ) {
-  const { error } = await supabase.rpc('update_staff_account', {
-    p_user_id: userId,
-    p_email: email ?? null,
-    p_role: role ?? null,
-    p_display_name: displayName ?? null,
-    p_phone: phone ?? null,
-    p_password: password ?? null,
+  return staffAdmin({
+    action: 'update',
+    user_id: userId,
+    email,
+    role,
+    display_name: displayName,
+    phone,
+    password,
   });
-  if (error) throw error;
 }
 
 export async function deleteStaffAccount(userId: string) {
-  const { error } = await supabase.rpc('delete_staff_account', {
-    p_user_id: userId,
-  });
-  if (error) throw error;
+  return staffAdmin({ action: 'delete', user_id: userId });
 }
 
 export async function updateMyProfile(displayName: string, phone: string) {
@@ -492,16 +522,24 @@ export async function deleteOption(id: string) {
 export async function sendNotificationEmail(
   toEmail: string, subject: string, body: string,
   actionUrl?: string, actionLabel?: string,
+  prices?: { total_price?: number; paid_now?: number; paid_to_date?: number; remaining?: number },
 ) {
   try {
-    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-notification-email`;
+    const url = `${import.meta.env.VITE_SUPABASE_URL || 'https://oddbplwvymcogcqbfpgj.supabase.co'}/functions/v1/send-notification-email`;
     await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
       },
-      body: JSON.stringify({ to_email: toEmail, subject, body, action_url: actionUrl, action_label: actionLabel }),
+      body: JSON.stringify({
+        to_email: toEmail,
+        subject,
+        body,
+        action_url: actionUrl,
+        action_label: actionLabel,
+        prices,
+      }),
     });
   } catch {
     // Best-effort: email failures shouldn't block the flow

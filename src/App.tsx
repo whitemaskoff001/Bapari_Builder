@@ -17,6 +17,20 @@ const photos = {
   fallback: 'https://images.pexels.com/photos/2333694/pexels-photo-2333694.jpeg?auto=compress&cs=tinysrgb&h=650&w=940',
 };
 
+function formatTaka(n: number) {
+  return `৳${new Intl.NumberFormat('en-US').format(Number(n) || 0)}`;
+}
+
+function isUnitGroupName(name: string) {
+  return /unit/i.test(name || '');
+}
+
+function staffLoginRequested() {
+  const hash = window.location.hash.slice(1);
+  const path = window.location.pathname.replace(/\/+$/, '');
+  return hash === 'iamseller/login' || path.endsWith('/iamseller/login');
+}
+
 function AppInner() {
   const { role, loading, signOut, profile, refreshProfile } = useAuth();
   const [view, setView] = useState<View>('home');
@@ -32,7 +46,7 @@ function AppInner() {
   const [dealToken, setDealToken] = useState('');
   const [sellerToken, setSellerToken] = useState('');
   const [modToken, setModToken] = useState('');
-  const [isLoginHash, setIsLoginHash] = useState(window.location.hash.slice(1) === 'iamseller/login');
+  const [isLoginHash, setIsLoginHash] = useState(staffLoginRequested());
 
   useEffect(() => {
     const saved = localStorage.getItem('bapari-cart');
@@ -55,10 +69,10 @@ function AppInner() {
   useEffect(() => {
     const handleHash = () => {
       const hash = window.location.hash.slice(1);
-      if (hash === 'iamseller/login') { setIsLoginHash(true); setView('login'); }
-      else if (hash.startsWith('deal/')) { setDealToken(hash.slice(5)); setView('deal-view'); }
+      if (staffLoginRequested()) { setIsLoginHash(true); setView('login'); }
+      else if (hash.startsWith('deal/')) { setDealToken(hash.slice(5)); setModToken(''); setView('deal-view'); }
       else if (hash.startsWith('confirm/')) { setSellerToken(hash.slice(8)); setView('seller-confirm'); }
-      else if (hash.startsWith('mod/')) { setModToken(hash.slice(4)); setView('deal-view'); }
+      else if (hash.startsWith('mod/')) { setModToken(hash.slice(4)); setDealToken(''); setView('deal-view'); }
       else { setIsLoginHash(false); }
     };
     handleHash();
@@ -115,8 +129,8 @@ function AppInner() {
       <main>
         {view === 'home' && <Home onBrowse={() => openView('products')} onAbout={() => openView('about')} onProduct={openProduct} content={siteContent} editMode={editMode && role === 'admin'} onContentUpdate={() => api.fetchSiteContent().then(setSiteContent)} />}
         {view === 'products' && <Products onProduct={openProduct} editMode={editMode && role === 'admin'} onContentUpdate={() => api.fetchSiteContent().then(setSiteContent)} content={siteContent} />}
-        {view === 'product' && selectedCategoryId && <ProductDetail categoryId={selectedCategoryId} onBack={() => openView('products')} onAdd={addToCart} editMode={editMode && role === 'admin'} content={siteContent} onContentUpdate={() => api.fetchSiteContent().then(setSiteContent)} />}
-        {view === 'cart' && <CartPage cart={cart} onRemove={removeFromCart} onBrowse={() => openView('products')} onSubmitted={(token, reference) => { setLastOrderToken(token); setLastOrderReference(reference); openView('order-confirmation'); }} />}
+        {view === 'product' && selectedCategoryId && <ProductDetail categoryId={selectedCategoryId} onBack={() => openView('products')} onAdd={addToCart} onOrderNow={(item) => { addToCart(item); openView('cart'); }} editMode={editMode && role === 'admin'} content={siteContent} onContentUpdate={() => api.fetchSiteContent().then(setSiteContent)} />}
+        {view === 'cart' && <CartPage cart={cart} onRemove={removeFromCart} onBrowse={() => openView('products')} onSubmitted={(token, reference) => { setCart([]); localStorage.removeItem('bapari-cart'); setLastOrderToken(token); setLastOrderReference(reference); openView('order-confirmation'); }} />}
         {view === 'order-confirmation' && <OrderConfirmation token={lastOrderToken} reference={lastOrderReference} onHome={navigateHome} />}
         {view === 'about' && <About onContact={() => openView('products')} content={siteContent} editMode={editMode && role === 'admin'} onContentUpdate={() => api.fetchSiteContent().then(setSiteContent)} />}
         {view === 'status' && <StatusPage />}
@@ -488,8 +502,8 @@ function Products({ onProduct, editMode, onContentUpdate, content }: {
 
 // â”€â”€â”€ ProductDetail â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-function ProductDetail({ categoryId, onBack, onAdd, editMode, content, onContentUpdate }: {
-  categoryId: string; onBack: () => void; onAdd: (item: CartItem) => void; editMode: boolean;
+function ProductDetail({ categoryId, onBack, onAdd, onOrderNow, editMode, content, onContentUpdate }: {
+  categoryId: string; onBack: () => void; onAdd: (item: CartItem) => void; onOrderNow: (item: CartItem) => void; editMode: boolean;
   content: SiteContent; onContentUpdate: () => void;
 }) {
   const [category, setCategory] = useState<Category | null>(null);
@@ -529,21 +543,21 @@ function ProductDetail({ categoryId, onBack, onAdd, editMode, content, onContent
   if (loading) return <section className="detail-section"><p className="loading-text">Loading...</p></section>;
   if (!category) return <section className="detail-section"><p className="loading-text">Material not found.</p></section>;
 
-  const unitGroup = groups.find((g) => g.name === 'Quantity Unit');
-  const otherGroups = groups.filter((g) => g.name !== 'Quantity Unit');
-  const unit = selections['Quantity Unit'] ?? unitGroup?.options[0]?.label ?? '';
+  const unitGroup = groups.find((g) => isUnitGroupName(g.name)) ?? groups[0];
+  const otherGroups = groups.filter((g) => g.id !== unitGroup?.id);
+  const unit = (unitGroup ? selections[unitGroup.name] : '') || unitGroup?.options[0]?.label || '';
 
-  const handleAdd = () => {
-    onAdd({
-      id: crypto.randomUUID(),
-      category_id: category.id,
-      category_name: category.name,
-      quantity,
-      unit,
-      option_selections: selections,
-      image_url: category.image_url,
-    });
-  };
+  const buildCartItem = (): CartItem => ({
+    id: crypto.randomUUID(),
+    category_id: category.id,
+    category_name: category.name,
+    quantity,
+    unit,
+    option_selections: selections,
+    image_url: category.image_url,
+  });
+
+  const handleAdd = () => { onAdd(buildCartItem()); };
 
   const reloadGroups = () => {
     api.fetchCategoryOptionGroups(category.id).then((gs) => {
@@ -690,6 +704,7 @@ function ProductDetail({ categoryId, onBack, onAdd, editMode, content, onContent
             </div>
           )}
           <button className="button button-dark full-button" onClick={handleAdd}><EditableText value={sc('detail_add_button', 'Add to materials list')} contentKey="detail_add_button" editMode={editMode} onUpdate={onContentUpdate} /> <ShoppingBag size={17} /></button>
+          <button className="button button-outline full-button" style={{ marginTop: 10 }} onClick={() => onOrderNow(buildCartItem())}>Order now <ArrowRight size={17} /></button>
           <p className="detail-note"><Phone size={15} /> <EditableText value={sc('detail_note_prefix', 'Not sure what you need?')} contentKey="detail_note_prefix" editMode={editMode} onUpdate={onContentUpdate} /> <strong><EditableText value={sc('detail_note_phone', 'Call +880 1711 123 456')} contentKey="detail_note_phone" editMode={editMode} onUpdate={onContentUpdate} /></strong></p>
         </div>
       </div>
@@ -755,22 +770,16 @@ function CartPage({ cart, onRemove, onBrowse, onSubmitted }: {
     setError('');
     try {
       const items = cart.map((item) => ({
+        category_id: item.category_id,
         category_name: item.category_name,
         quantity: item.quantity,
         unit: item.unit,
         option_selections: item.option_selections,
       }));
       const result = await api.placeOrder(form.name, form.email, form.phone, form.address, items);
-      localStorage.removeItem('bapari-cart');
-
-      // Send confirmation email with reference number and order details
-      const itemListText = items.map((i) => `â€¢ ${i.quantity} ${i.unit} ${i.category_name}`).join('\n');
-      const emailBody = `Hi ${form.name},\n\nThank you for your order with Bapari Builders. We've received your request and our team will call you at ${form.phone} to confirm availability and pricing.\n\nYour order reference: ${result.reference_number}\n\nMaterials requested:\n${itemListText}\n\nDelivery address: ${form.address}\n\nYou can track your order anytime by entering this reference on our Track Order page.\n\nBapari Builders â€” Building trust, one project at a time.`;
-      api.sendNotificationEmail(form.email, `Order Confirmation â€” ${result.reference_number}`, emailBody).catch(() => {});
-
       onSubmitted(result.access_token, result.reference_number);
     } catch (err) {
-      setError('Something went wrong. Please try again.');
+      setError(api.apiErrorMessage(err, 'Could not place this order. Please try again.'));
       setSubmitting(false);
     }
   };
@@ -1035,11 +1044,12 @@ function DealView({ dealToken, modToken }: { dealToken: string; modToken: string
           </div>
         ) : (
           <>
+            {deal.reference_number && <p className="deal-info-msg">Reference: <strong>{deal.reference_number}</strong></p>}
             <div className="deal-terms-box">
-              <div className="deal-term-row"><span>Total price</span><strong>à§³{fmt(isModification ? mod.new_total_price : deal.total_price)}</strong></div>
-              <div className="deal-term-row"><span>Down payment</span><strong>à§³{fmt(deal.down_payment)}</strong></div>
-              <div className="deal-term-row highlight"><span>Remaining after down payment</span><strong>à§³{fmt(isModification ? mod.new_total_price - deal.total_paid : deal.remaining_balance)}</strong></div>
-              {deal.total_paid > 0 && <div className="deal-term-row"><span>Paid so far</span><strong>à§³{fmt(deal.total_paid)}</strong></div>}
+              <div className="deal-term-row"><span>Total price</span><strong>{formatTaka(isModification ? mod.new_total_price : deal.total_price)}</strong></div>
+              <div className="deal-term-row"><span>Paid so far</span><strong>{formatTaka(deal.total_paid)}</strong></div>
+              <div className="deal-term-row highlight"><span>Remaining</span><strong>{formatTaka(isModification ? mod.new_total_price - deal.total_paid : deal.remaining_balance)}</strong></div>
+              {deal.down_payment > 0 && <div className="deal-term-row"><span>Pay now (on delivery)</span><strong>{formatTaka(deal.down_payment)}</strong></div>}
             </div>
 
             <div className="order-items-list">
@@ -1053,7 +1063,7 @@ function DealView({ dealToken, modToken }: { dealToken: string; modToken: string
               <div className="order-items-list">
                 <span className="card-eyebrow">Payment history</span>
                 {deal.payments.map((p: any) => (
-                  <div className="order-item-row" key={p.id}><TrendingUp size={16} /><span>à§³{fmt(p.amount)} â€” {new Date(p.created_at).toLocaleDateString()}</span></div>
+                  <div className="order-item-row" key={p.id}><TrendingUp size={16} /><span>{formatTaka(p.amount)} — {new Date(p.created_at).toLocaleDateString()}</span></div>
                 ))}
               </div>
             )}
@@ -1083,7 +1093,7 @@ function DealView({ dealToken, modToken }: { dealToken: string; modToken: string
 // â”€â”€â”€ SellerConfirm â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function SellerConfirm({ sellerToken }: { sellerToken: string }) {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [error, setError] = useState('');
 
@@ -1287,7 +1297,7 @@ function Dashboard({ role, onNavigate, onLogout, profile, editMode, setEditMode 
       <div className="metrics">
         <div><span>Open requests</span><strong>{String(pendingOrders.length).padStart(2, '0')}</strong><small>Needs attention</small></div>
         <div><span>Ongoing deals</span><strong>{String(ongoingDeals.length).padStart(2, '0')}</strong><small>Active negotiations</small></div>
-        <div><span>Total collected</span><strong>à§³{new Intl.NumberFormat('en-US').format(totalCollected)}</strong><small>All deals</small></div>
+        <div><span>Total collected</span><strong>{formatTaka(totalCollected)}</strong><small>All deals</small></div>
         <div><span>Completed</span><strong>{String(doneDeals.length).padStart(2, '0')}</strong><small>Finished deals</small></div>
       </div>
 
@@ -1321,7 +1331,7 @@ function Dashboard({ role, onNavigate, onLogout, profile, editMode, setEditMode 
           {ongoingDeals.slice(0, 5).map((d) => (
             <div className="request-row" key={d.id}>
               <span className="request-icon"><TrendingUp size={17} /></span>
-              <div><strong>Deal Â· à§³{new Intl.NumberFormat('en-US').format(d.total_price)}</strong><span>Status: {d.status.replace(/_/g, ' ')} Â· Paid: à§³{new Intl.NumberFormat('en-US').format(d.total_paid)}</span></div>
+              <div><strong>Deal · {formatTaka(d.total_price)}</strong><span>Status: {d.status.replace(/_/g, ' ')} · Paid: {formatTaka(d.total_paid)}</span></div>
               <button className="small-action" onClick={() => onNavigate('management')}>Manage</button>
             </div>
           ))}
@@ -1516,7 +1526,7 @@ function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) 
   const [showPayment, setShowPayment] = useState<string | null>(null);
   const [paymentForm, setPaymentForm] = useState({ amount: '', photo_url: '', note: '' });
   const [showModify, setShowModify] = useState<string | null>(null);
-  const [modifyForm, setModifyForm] = useState({ total_price: '', items: '' });
+  const [modifyForm, setModifyForm] = useState<{ total_price: string; items: Array<{ category_name: string; quantity: number; unit: string; option_selections?: Record<string, string> }> }>({ total_price: '', items: [] });
   const [actionMsg, setActionMsg] = useState('');
 
   const load = async () => {
@@ -1566,9 +1576,17 @@ function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) 
     try {
       await api.setDealTerms(showDealTerms, parseFloat(termsForm.total_price), parseFloat(termsForm.down_payment));
       setShowDealTerms(null); setTermsForm({ total_price: '', down_payment: '' });
-      setActionMsg('Deal terms sent to buyer.');
+      setActionMsg('Deal terms sent to the buyer with total, pay-now, and remaining.');
       load();
-    } catch (e: any) { setActionError(e.message); }
+    } catch (e: any) { setActionError(api.apiErrorMessage(e)); }
+  };
+
+  const handleConfirmDeal = async (dealId: string) => {
+    try {
+      await api.confirmDealAsStaff(dealId);
+      setActionMsg('Agreement confirmed. Buyer was notified with total, paid (0), and remaining.');
+      load();
+    } catch (e: any) { setActionError(api.apiErrorMessage(e)); }
   };
 
   const handleRecordPayment = async () => {
@@ -1584,13 +1602,11 @@ function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) 
   const handleProposeMod = async () => {
     if (!showModify) return;
     try {
-      let items: any[] = [];
-      try { items = JSON.parse(modifyForm.items); } catch { setActionError('Items must be valid JSON.'); return; }
-      await api.proposeModification(showModify, items, parseFloat(modifyForm.total_price));
-      setShowModify(null); setModifyForm({ total_price: '', items: '' });
-      setActionMsg('Modification proposed. Buyer will be notified by email.');
+      await api.proposeModification(showModify, modifyForm.items, parseFloat(modifyForm.total_price));
+      setShowModify(null); setModifyForm({ total_price: '', items: [] });
+      setActionMsg('Change sent to the buyer. They must accept it from the email link.');
       load();
-    } catch (e: any) { setActionError(e.message); }
+    } catch (e: any) { setActionError(api.apiErrorMessage(e)); }
   };
 
   const fmt = (n: number) => new Intl.NumberFormat('en-US').format(n);
@@ -1633,7 +1649,7 @@ function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) 
                 pendingOrders.map((o) => (
                   <div className="mgmt-card" key={o.id}>
                     <div className="mgmt-card-head">
-                      <div><strong>{o.buyer_name}</strong><span>{o.buyer_phone} Â· {o.buyer_email}</span></div>
+                      <div><strong>{o.buyer_name}</strong><span>{o.reference_number ? `${o.reference_number} · ` : ''}{o.buyer_phone} · {o.buyer_email}</span></div>
                       <span className={`status-badge ${o.status}`}>{o.status.replace(/_/g, ' ')}</span>
                     </div>
                     <div className="mgmt-card-body">
@@ -1666,31 +1682,32 @@ function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) 
                       </div>
                       <div className="mgmt-card-body">
                         <div className="deal-terms-mini">
-                          <span>Total: <strong>à§³{fmt(d.total_price)}</strong></span>
-                          <span>Paid: <strong>à§³{fmt(d.total_paid)}</strong></span>
-                          <span>Remaining: <strong>à§³{fmt(d.remaining_balance)}</strong></span>
+                          <span>Ref: <strong>{order?.reference_number || '—'}</strong></span>
+                          <span>Total: <strong>{formatTaka(d.total_price)}</strong></span>
+                          <span>Paid: <strong>{formatTaka(d.total_paid)}</strong></span>
+                          <span>Remaining: <strong>{formatTaka(d.remaining_balance)}</strong></span>
                         </div>
                         <div className="mgmt-items">{renderDealItems(d.order_id)}</div>
                         {pmts.length > 0 && (
                           <div className="payment-history-mini">
                             <span className="card-eyebrow">Payments</span>
-                            {pmts.map((p) => <div className="order-item-row" key={p.id}><TrendingUp size={13} /><span>à§³{fmt(p.amount)} â€” {new Date(p.created_at).toLocaleDateString()}</span></div>)}
+                            {pmts.map((p) => <div className="order-item-row" key={p.id}><TrendingUp size={13} /><span>{formatTaka(p.amount)} — {new Date(p.created_at).toLocaleDateString()}</span></div>)}
                           </div>
                         )}
                       </div>
                       <div className="mgmt-card-actions">
                         {d.status === 'pending_terms' && <button className="button button-dark" onClick={() => { setShowDealTerms(d.id); setTermsForm({ total_price: '', down_payment: '' }); }}>Set deal terms</button>}
                         {d.status === 'terms_sent' && <span className="muted-small">Waiting for buyer to respond...</span>}
-                        {d.status === 'buyer_accepted' && <span className="muted-small">Buyer accepted â€” check email to confirm</span>}
+                        {d.status === 'buyer_accepted' && <button className="button button-dark" onClick={() => handleConfirmDeal(d.id)}>Confirm agreement</button>}
                         {d.status === 'active' && <>
                           <button className="button button-dark" onClick={() => { setShowPayment(d.id); setPaymentForm({ amount: '', photo_url: '', note: '' }); }}><TrendingUp size={14} /> Record payment</button>
-                          <button className="button button-outline" onClick={() => { setShowModify(d.id); setModifyForm({ total_price: String(d.total_price), items: JSON.stringify(orderItems[d.order_id] ?? [], null, 2) }); }}>Modify order</button>
+                          <button className="button button-outline" onClick={() => { setShowModify(d.id); setModifyForm({ total_price: String(d.total_price), items: (orderItems[d.order_id] ?? []).map((it) => ({ category_name: it.category_name, quantity: Number(it.quantity), unit: it.unit, option_selections: it.option_selections })) }); }}>Modify order</button>
                         </>}
                       </div>
                       {showDealTerms === d.id && (
                         <div className="inline-form">
-                          <input type="number" placeholder="Total price (à§³)" value={termsForm.total_price} onChange={(e) => setTermsForm({ ...termsForm, total_price: e.target.value })} />
-                          <input type="number" placeholder="Down payment (à§³)" value={termsForm.down_payment} onChange={(e) => setTermsForm({ ...termsForm, down_payment: e.target.value })} />
+                          <input type="number" placeholder="Total price (৳)" value={termsForm.total_price} onChange={(e) => setTermsForm({ ...termsForm, total_price: e.target.value })} />
+                          <input type="number" placeholder="Pay now (৳)" value={termsForm.down_payment} onChange={(e) => setTermsForm({ ...termsForm, down_payment: e.target.value })} />
                           <div className="form-buttons-row">
                             <button className="button button-dark" onClick={handleSetTerms}>Send to buyer</button>
                             <button className="button button-outline" onClick={() => setShowDealTerms(null)}>Cancel</button>
@@ -1699,7 +1716,7 @@ function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) 
                       )}
                       {showPayment === d.id && (
                         <div className="inline-form">
-                          <input type="number" placeholder="Amount paid (à§³)" value={paymentForm.amount} onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })} />
+                          <input type="number" placeholder="Amount paid (৳)" value={paymentForm.amount} onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })} />
                           <div className="uploader-inline"><ImageUploader aspectRatio={4 / 3} currentUrl={paymentForm.photo_url} folder="receipts" onUploaded={(url) => setPaymentForm({ ...paymentForm, photo_url: url })} label="Upload receipt photo" /></div>
                           <input placeholder="Note (optional)" value={paymentForm.note} onChange={(e) => setPaymentForm({ ...paymentForm, note: e.target.value })} />
                           <div className="form-buttons-row">
@@ -1710,8 +1727,26 @@ function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) 
                       )}
                       {showModify === d.id && (
                         <div className="inline-form">
-                          <input type="number" placeholder="New total price (à§³)" value={modifyForm.total_price} onChange={(e) => setModifyForm({ ...modifyForm, total_price: e.target.value })} />
-                          <textarea placeholder="Items JSON" value={modifyForm.items} onChange={(e) => setModifyForm({ ...modifyForm, items: e.target.value })} rows={5} />
+                          <input type="number" placeholder="New total price (৳)" value={modifyForm.total_price} onChange={(e) => setModifyForm({ ...modifyForm, total_price: e.target.value })} />
+                          {modifyForm.items.map((it, idx) => (
+                            <div className="two-fields" key={idx}>
+                              <input value={it.category_name} onChange={(e) => {
+                                const next = [...modifyForm.items];
+                                next[idx] = { ...next[idx], category_name: e.target.value };
+                                setModifyForm({ ...modifyForm, items: next });
+                              }} />
+                              <input type="number" value={it.quantity} onChange={(e) => {
+                                const next = [...modifyForm.items];
+                                next[idx] = { ...next[idx], quantity: Number(e.target.value) };
+                                setModifyForm({ ...modifyForm, items: next });
+                              }} />
+                              <input value={it.unit} onChange={(e) => {
+                                const next = [...modifyForm.items];
+                                next[idx] = { ...next[idx], unit: e.target.value };
+                                setModifyForm({ ...modifyForm, items: next });
+                              }} />
+                            </div>
+                          ))}
                           <div className="form-buttons-row">
                             <button className="button button-dark" onClick={handleProposeMod}>Propose to buyer</button>
                             <button className="button button-outline" onClick={() => setShowModify(null)}>Cancel</button>
@@ -1738,8 +1773,8 @@ function ManagementPage({ role, onBack }: { role: string; onBack: () => void }) 
                       </div>
                       <div className="mgmt-card-body">
                         <div className="deal-terms-mini">
-                          <span>Total: <strong>à§³{fmt(d.total_price)}</strong></span>
-                          <span>Paid: <strong>à§³{fmt(d.total_paid)}</strong></span>
+                          <span>Total: <strong>{formatTaka(d.total_price)}</strong></span>
+                          <span>Paid: <strong>{formatTaka(d.total_paid)}</strong></span>
                         </div>
                         <div className="mgmt-items">{renderDealItems(d.order_id)}</div>
                       </div>

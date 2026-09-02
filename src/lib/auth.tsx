@@ -141,11 +141,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const fallbackProfile: ProfileRow = {
           id: `demo-${demoAccount.role}`,
           email: normalizedEmail,
-          role: demoAccount.role,
+          role: demoAccount.role === 'admin' ? 'admin' : 'seller',
           display_name: demoAccount.displayName,
           phone: '',
           avatar_url: '',
-          created_at: new Date().toISOString(),
         };
         setProfile(fallbackProfile);
         writeCache(fallbackProfile);
@@ -155,63 +154,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       throw new Error('Supabase is not configured. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.');
     }
 
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
-      if (error) {
-        if (demoAccount && password === demoAccount.password) {
-          const fallbackProfile: ProfileRow = {
-            id: `demo-${demoAccount.role}`,
-            email: normalizedEmail,
-            role: demoAccount.role,
-            display_name: demoAccount.displayName,
-            phone: '',
-            avatar_url: '',
-            created_at: new Date().toISOString(),
-          };
-          setProfile(fallbackProfile);
-          writeCache(fallbackProfile);
-          setSession(null);
-          return { role: demoAccount.role };
-        }
-        throw error;
-      }
+    const { data, error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
+    if (error) throw error;
 
-      const { data: prof } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', data.user.id)
-        .maybeSingle();
-      const nextProfile = prof ?? {
-        id: data.user.id,
-        email: data.user.email ?? normalizedEmail,
-        role: 'admin',
-        display_name: demoAccount?.displayName || (data.user.email ?? 'Staff'),
-        phone: '',
-        avatar_url: '',
-        created_at: new Date().toISOString(),
-      } as ProfileRow;
-      setProfile(nextProfile);
-      writeCache(nextProfile);
-      setSession(data.session);
-      return { role: (nextProfile.role === 'admin' ? 'admin' : 'seller') as Role };
-    } catch (error) {
-      if (demoAccount && password === demoAccount.password) {
-        const fallbackProfile: ProfileRow = {
-          id: `demo-${demoAccount.role}`,
-          email: normalizedEmail,
-          role: demoAccount.role,
-          display_name: demoAccount.displayName,
-          phone: '',
-          avatar_url: '',
-          created_at: new Date().toISOString(),
-        };
-        setProfile(fallbackProfile);
-        writeCache(fallbackProfile);
-        setSession(null);
-        return { role: demoAccount.role };
-      }
-      throw error;
-    }
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', data.user.id)
+      .maybeSingle();
+    const nextProfile = (prof ?? {
+      id: data.user.id,
+      email: data.user.email ?? normalizedEmail,
+      role: demoAccount?.role || 'seller',
+      display_name: demoAccount?.displayName || (data.user.email ?? 'Staff'),
+      phone: '',
+      avatar_url: '',
+    }) as ProfileRow;
+    setProfile(nextProfile);
+    writeCache(nextProfile);
+    setSession(data.session);
+    return { role: (nextProfile.role === 'admin' ? 'admin' : 'seller') as Role };
   };
 
   const signOut = async () => {
