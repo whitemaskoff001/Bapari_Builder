@@ -99,9 +99,11 @@ function AppInner() {
       <Header
         cartCount={cart.length}
         role={role}
+        profile={profile}
         onNavigate={openView}
         onCart={() => setCartOpen(true)}
         onLogin={() => { window.location.hash = 'iamseller/login'; setView('login'); }}
+        onLogout={signOut}
         mobileMenu={mobileMenu}
         setMobileMenu={setMobileMenu}
         announcement={sc('announcement', 'Building trust, one project at a time')}
@@ -145,8 +147,9 @@ export default App;
 
 // â”€â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-function Header({ cartCount, role, onNavigate, onCart, onLogin, mobileMenu, setMobileMenu, announcement, content, editMode, onContentUpdate }: {
-  cartCount: number; role: string | null; onNavigate: (v: View) => void; onCart: () => void; onLogin: () => void;
+function Header({ cartCount, role, profile, onNavigate, onCart, onLogin, onLogout, mobileMenu, setMobileMenu, announcement, content, editMode, onContentUpdate }: {
+  cartCount: number; role: string | null; profile: any; onNavigate: (v: View) => void; onCart: () => void; onLogin: () => void;
+  onLogout: () => Promise<void>;
   mobileMenu: boolean; setMobileMenu: (v: boolean) => void; announcement: string;
   content: SiteContent; editMode: boolean; onContentUpdate: () => void;
 }) {
@@ -174,7 +177,16 @@ function Header({ cartCount, role, onNavigate, onCart, onLogin, mobileMenu, setM
         <div className="nav-actions">
           <button className="icon-button cart-button" onClick={onCart}><ShoppingBag size={19} /><span>{cartCount}</span></button>
           {role ? (
-            <button className="account-link" onClick={() => onNavigate('dashboard')}><CircleUserRound size={18} />Dashboard</button>
+            <>
+              <span className="account-name" title={profile?.email || ''}>
+                <CircleUserRound size={18} />
+                {profile?.display_name || (role === 'admin' ? 'Admin' : 'Seller')}
+              </span>
+              <button className="account-link" onClick={() => onNavigate('dashboard')}>Dashboard</button>
+              <button className="logout-button" onClick={() => { if (confirm('Sign out of Bapari Builders?')) onLogout(); }} title="Sign out">
+                <LogOut size={15} /> Sign out
+              </button>
+            </>
           ) : (
             <button className="account-link" onClick={onLogin}><UserRound size={17} />Staff login</button>
           )}
