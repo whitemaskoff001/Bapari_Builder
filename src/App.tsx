@@ -9,6 +9,8 @@ import {
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import * as api from '@/lib/api';
+import { playCrack, unlockNotificationAudio } from '@/lib/sound';
+import { subscribeTables } from '@/lib/live';
 import type { View, Category, CartItem, SiteContent, NotificationRow, OptionGroup, OptionChoice } from '@/types';
 import { ImageUploader } from '@/components/ImageUploader';
 
@@ -75,6 +77,7 @@ function AppInner() {
   const [modToken, setModToken] = useState('');
   const [isLoginHash, setIsLoginHash] = useState(staffLoginRequested());
   const [manageFocus, setManageFocus] = useState<ManageFocus | null>(null);
+  const [statusRef, setStatusRef] = useState('');
 
   useEffect(() => {
     const saved = localStorage.getItem('bapari-cart');
@@ -85,6 +88,12 @@ function AppInner() {
 
   useEffect(() => {
     api.fetchSiteContent().then(setSiteContent).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    const unlock = () => unlockNotificationAudio();
+    document.addEventListener('pointerdown', unlock);
+    return () => document.removeEventListener('pointerdown', unlock);
   }, []);
 
   useEffect(() => {
@@ -99,6 +108,13 @@ function AppInner() {
     const handleHash = () => {
       const hash = window.location.hash.slice(1);
       if (staffLoginRequested()) { setIsLoginHash(true); setView('login'); return; }
+      if (hash.startsWith('status')) {
+        const ref = hash.startsWith('status/') ? decodeURIComponent(hash.slice(7)).trim() : '';
+        setStatusRef(ref);
+        setIsLoginHash(false);
+        setView('status');
+        return;
+      }
       if (hash.startsWith('deal/')) { setIsLoginHash(false); setDealToken(hash.slice(5)); setModToken(''); setView('deal-view'); return; }
       if (hash.startsWith('confirm/')) { setIsLoginHash(false); setSellerToken(hash.slice(8)); setView('seller-confirm'); return; }
       if (hash.startsWith('mod/')) { setIsLoginHash(false); setModToken(hash.slice(4)); setDealToken(''); setView('deal-view'); return; }
@@ -197,7 +213,7 @@ function AppInner() {
         {view === 'cart' && <CartPage cart={cart} onRemove={removeFromCart} onBrowse={() => openView('products')} onSubmitted={(token, reference) => { setCart([]); localStorage.removeItem('bapari-cart'); setLastOrderToken(token); setLastOrderReference(reference); openView('order-confirmation'); }} />}
         {view === 'order-confirmation' && <OrderConfirmation token={lastOrderToken} reference={lastOrderReference} onHome={navigateHome} />}
         {view === 'about' && <About onContact={() => openView('products')} content={siteContent} editMode={editMode && role === 'admin'} onContentUpdate={() => api.fetchSiteContent().then(setSiteContent)} />}
-        {view === 'status' && <StatusPage />}
+        {view === 'status' && <StatusPage initialRef={statusRef} />}
         {view === 'deal-view' && <DealView dealToken={dealToken} modToken={modToken} />}
         {view === 'seller-confirm' && <SellerConfirm sellerToken={sellerToken} />}
         {view === 'login' && isLoginHash && <Login onBack={navigateHome} onSuccess={() => {
@@ -233,12 +249,29 @@ export default App;
 // â”€â”€â”€ Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 function StaffBell({ onOpen }: { onOpen: (n: NotificationRow) => void }) {
+  const { profile } = useAuth();
   const [notifs, setNotifs] = useState<NotificationRow[]>([]);
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  const knownIds = useRef<Set<string>>(new Set());
+  const primed = useRef(false);
 
-  const load = () => { api.fetchNotifications().then(setNotifs).catch(() => {}); };
-  useEffect(() => { load(); const t = window.setInterval(load, 8000); return () => window.clearInterval(t); }, []);
+  const load = () => {
+    api.fetchNotifications().then((rows) => {
+      if (primed.current) {
+        const fresh = rows.filter((n) => !knownIds.current.has(n.id));
+        if (fresh.length) playCrack();
+      }
+      knownIds.current = new Set(rows.map((n) => n.id));
+      primed.current = true;
+      setNotifs(rows);
+    }).catch(() => {});
+  };
+  useEffect(() => {
+    load();
+    const stop = subscribeTables(['notifications'], load);
+    return stop;
+  }, [profile?.id]);
 
   useEffect(() => {
     if (!open) return;
@@ -952,6 +985,10 @@ function OrderConfirmation({ token, reference, onHome }: { token: string; refere
   useEffect(() => {
     if (!token) { setLoading(false); return; }
     api.getOrderByToken(token).then((data) => { setOrder(data); setLoading(false); }).catch(() => setLoading(false));
+    const stop = subscribeTables(['orders', 'deals'], () => {
+      api.getOrderByToken(token).then(setOrder).catch(() => {});
+    });
+    return stop;
   }, [token]);
 
   const copyRef = () => {
@@ -1025,8 +1062,8 @@ function OrderConfirmation({ token, reference, onHome }: { token: string; refere
 
 // â”€â”€â”€ StatusPage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-function StatusPage() {
-  const [token, setToken] = useState('');
+function StatusPage({ initialRef = '' }: { initialRef?: string }) {
+  const [token, setToken] = useState(initialRef);
   const [order, setOrder] = useState<any>(null);
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -1040,13 +1077,13 @@ function StatusPage() {
     completed: 'Order completed',
   };
 
-  const search = async () => {
-    if (!token.trim()) return;
+  const search = async (value?: string) => {
+    const query = (value ?? token).trim();
+    if (!query) return;
+    setToken(query);
     setLoading(true);
     setSearched(true);
     try {
-      const query = token.trim();
-      // Try short reference number first (starts with BAP), then fall back to long token
       const isReference = query.toUpperCase().startsWith('BAP');
       const data = isReference
         ? await api.getOrderByReference(query)
@@ -1056,6 +1093,17 @@ function StatusPage() {
     setLoading(false);
   };
 
+  useEffect(() => {
+    if (initialRef) search(initialRef);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialRef]);
+
+  useEffect(() => {
+    if (!order?.id) return;
+    const stop = subscribeTables(['orders', 'deals', 'payments'], () => { search(token); });
+    return stop;
+  }, [order?.id]);
+
   return (
     <section className="status-section page-section">
       <div className="status-card">
@@ -1064,7 +1112,7 @@ function StatusPage() {
         <h1>Keep an eye on<br /><em>your order.</em></h1>
         <p>Enter the order reference we gave you after your request.</p>
         <label className="field-label">Order reference<input value={token} onChange={(e) => setToken(e.target.value)} placeholder="e.g. BAP010926ST001" onKeyDown={(e) => { if (e.key === 'Enter') search(); }} /></label>
-        <button className="button button-dark full-button" onClick={search} disabled={loading}>
+        <button className="button button-dark full-button" onClick={() => search()} disabled={loading}>
           {loading ? 'Searching...' : 'Check status'} <ArrowRight size={17} />
         </button>
         {searched && !loading && order && (
@@ -1097,7 +1145,7 @@ function StatusPage() {
               ))}
             </div>
             {order.deals?.length > 0 && (
-              <button className="button button-dark full-button" onClick={() => { window.location.hash = `deal/${order.deals[0].buyer_token}`; window.location.reload(); }}>
+              <button className="button button-dark full-button" onClick={() => { window.location.hash = `deal/${order.deals[0].buyer_token}`; }}>
                 View deal terms <ArrowRight size={16} />
               </button>
             )}
@@ -1125,6 +1173,11 @@ function DealView({ dealToken, modToken }: { dealToken: string; modToken: string
   };
 
   useEffect(() => { load(); }, [token]);
+  useEffect(() => {
+    if (!token) return;
+    const stop = subscribeTables(['deals', 'payments'], load);
+    return stop;
+  }, [token]);
 
   const accept = async () => {
     setActing(true);
@@ -1375,7 +1428,11 @@ function Dashboard({ role, onNavigate, onLogout, profile, editMode, setEditMode,
     api.fetchNotifications().then(setNotifs).catch(() => {});
   };
 
-  useEffect(() => { loadData(); const interval = setInterval(loadData, 10000); return () => clearInterval(interval); }, []);
+  useEffect(() => {
+    loadData();
+    const stop = subscribeTables(['orders', 'deals', 'notifications'], loadData);
+    return stop;
+  }, []);
 
   const pendingOrders = orders.filter((o) => o.status === 'pending');
   const ongoingDeals = deals.filter((d) => ['active', 'seller_confirmed', 'terms_sent', 'buyer_accepted', 'pending_terms'].includes(d.status));
@@ -1688,7 +1745,11 @@ function ManagementPage({ role, onBack, focus }: { role: string; onBack: () => v
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    const stop = subscribeTables(['orders', 'deals', 'order_items', 'payments', 'notifications'], load);
+    return stop;
+  }, []);
 
   useEffect(() => {
     if (!focus) return;
@@ -1707,16 +1768,31 @@ function ManagementPage({ role, onBack, focus }: { role: string; onBack: () => v
     }, 400);
   }, [focus]);
 
-  const pendingOrders = orders.filter((o) => o.status === 'pending' || o.status === 'picked_up');
+  const pendingOrders = orders.filter((o) => {
+    if (o.status === 'pending' || o.status === 'picked_up') return true;
+    if (o.status === 'accepted') {
+      const d = deals.find((x) => x.order_id === o.id);
+      return d?.status === 'pending_terms';
+    }
+    return false;
+  });
   const activeDeals = deals.filter((d) => ['pending_terms', 'terms_sent', 'buyer_accepted', 'seller_confirmed', 'active'].includes(d.status));
   const doneDeals = deals.filter((d) => d.status === 'done' || d.status === 'buyer_rejected');
 
   const handlePickUp = async (id: string) => {
-    try { await api.pickUpOrder(id); setActionMsg('Order picked up.'); load(); } catch (e: any) { setActionError(e.message); }
+    try { await api.pickUpOrder(id); setActionMsg('Picked. Call the buyer, then Accept or Reject.'); load(); } catch (e: any) { setActionError(e.message); }
   };
 
   const handleAccept = async (id: string) => {
-    try { await api.acceptOrder(id); setActionMsg('Order accepted. Set deal terms now.'); load(); } catch (e: any) { setActionError(e.message); }
+    if (!confirm('Accept this order and set the deal terms now?')) return;
+    try {
+      const dealId = await api.acceptOrder(id);
+      setTab('pending');
+      setShowDealTerms(dealId);
+      setTermsForm({ total_price: '', down_payment: '' });
+      setActionMsg('Accepted. Enter total price and pay now below. Left later is calculated automatically.');
+      load();
+    } catch (e: any) { setActionError(api.apiErrorMessage(e)); }
   };
 
   const handleReject = async (id: string) => {
@@ -1724,12 +1800,14 @@ function ManagementPage({ role, onBack, focus }: { role: string; onBack: () => v
     try { await api.rejectOrder(id); setActionMsg('Order rejected.'); load(); } catch (e: any) { setActionError(e.message); }
   };
 
-  const handleSetTerms = async () => {
-    if (!showDealTerms) return;
+  const handleSetTerms = async (dealId?: string) => {
+    const id = dealId || showDealTerms;
+    if (!id) return;
     try {
-      await api.setDealTerms(showDealTerms, parseFloat(termsForm.total_price), parseFloat(termsForm.down_payment));
+      await api.setDealTerms(id, parseFloat(termsForm.total_price), parseFloat(termsForm.down_payment));
       setShowDealTerms(null); setTermsForm({ total_price: '', down_payment: '' });
-      setActionMsg('Deal terms sent to the buyer with total, pay-now, and remaining.');
+      setTab('ongoing');
+      setActionMsg('Terms sent to the buyer. Ongoing now shows the next step: waiting for them to accept.');
       load();
     } catch (e: any) { setActionError(api.apiErrorMessage(e)); }
   };
@@ -1811,10 +1889,25 @@ function ManagementPage({ role, onBack, focus }: { role: string; onBack: () => v
                       <small className="muted-small">{new Date(o.created_at).toLocaleString()}</small>
                     </div>
                     <div className="mgmt-card-actions">
-                      {o.status === 'pending' && <button className="button button-dark" onClick={() => handlePickUp(o.id)}><Package size={14} /> Pick up</button>}
-                      <button className="button button-dark" onClick={() => handleAccept(o.id)}><Check size={14} /> Accept</button>
-                      <button className="button button-outline" onClick={() => handleReject(o.id)}><X size={14} /> Reject</button>
+                      {o.status === 'pending' && <button className="button button-dark" onClick={() => handlePickUp(o.id)}><Package size={14} /> Pick</button>}
+                      {o.status === 'picked_up' && <button className="button button-dark" onClick={() => handleAccept(o.id)}><Check size={14} /> Accept</button>}
+                      {o.status !== 'accepted' && <button className="button button-outline" onClick={() => handleReject(o.id)}><X size={14} /> Reject</button>}
                     </div>
+                    {(() => {
+                      const deal = deals.find((d) => d.order_id === o.id && d.status === 'pending_terms');
+                      if (!deal) return null;
+                      return (
+                        <div className="inline-form">
+                          <p className="terms-preview">Send the whole price, what they pay now, and what is left later.</p>
+                          <input type="number" placeholder="Total price (৳)" value={showDealTerms === deal.id ? termsForm.total_price : ''} onChange={(e) => { setShowDealTerms(deal.id); setTermsForm({ ...termsForm, total_price: e.target.value }); }} />
+                          <input type="number" placeholder="Pay now (৳)" value={showDealTerms === deal.id ? termsForm.down_payment : ''} onChange={(e) => { setShowDealTerms(deal.id); setTermsForm({ ...termsForm, down_payment: e.target.value }); }} />
+                          <p className="terms-preview">Left for later (automatic): {formatTaka(Math.max(0, (parseFloat(showDealTerms === deal.id ? termsForm.total_price : '0') || 0) - (parseFloat(showDealTerms === deal.id ? termsForm.down_payment : '0') || 0)))}</p>
+                          <div className="form-buttons-row">
+                            <button className="button button-dark" onClick={() => handleSetTerms(deal.id)}>Send to buyer</button>
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
                 ))
               }
@@ -1863,7 +1956,7 @@ function ManagementPage({ role, onBack, focus }: { role: string; onBack: () => v
                           <input type="number" placeholder="Pay now (৳)" value={termsForm.down_payment} onChange={(e) => setTermsForm({ ...termsForm, down_payment: e.target.value })} />
                           <p className="terms-preview">Left for later (automatic): {formatTaka(Math.max(0, (parseFloat(termsForm.total_price) || 0) - (parseFloat(termsForm.down_payment) || 0)))}</p>
                           <div className="form-buttons-row">
-                            <button className="button button-dark" onClick={handleSetTerms}>Send to buyer</button>
+                            <button className="button button-dark" onClick={() => handleSetTerms()}>Send to buyer</button>
                             <button className="button button-outline" onClick={() => setShowDealTerms(null)}>Cancel</button>
                           </div>
                         </div>
